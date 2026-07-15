@@ -425,7 +425,7 @@ function render(d,query){
         <div><h3>${c.name}</h3><div class="pos">${c.pos}</div></div>
       </div>
       <div class="hl">${c.hl.map(h=>`<div>${h}</div>`).join("")}</div>
-      <div class="price">💰 ${c.price}</div>
+      <div class="price">¥ ${c.price}</div>
       <div class="comment">${c.comment}</div>
     </div>`).join("");
   let t=`<thead><tr>${d.table.head.map((h,i)=>`<th>${i===0?'对比维度':h}</th>`).join("")}</tr></thead><tbody>`;
@@ -466,7 +466,7 @@ function openModal(i){
     <div class="mrow"><div class="mlabel">核心亮点</div><div class="mval">${c.hl.map(h=>'· '+h).join('<br>')}</div></div>
     <div class="mrow"><div class="mlabel">定价</div><div class="mval">${c.price}</div></div>
     <div class="mrow"><div class="mlabel">一句话点评</div><div class="mval">${c.comment}</div></div>
-    <div class="ai-note"><b>🤖 AI 深度点评（Mock）：</b><br>${notes.join('<br><br>')}</div>`;
+    <div class="ai-note"><b>AI 深度点评（Mock）：</b><br>${notes.join('<br><br>')}</div>`;
   document.getElementById("mask").style.display="flex";
 }
 function closeModal(){document.getElementById("mask").style.display="none"}
