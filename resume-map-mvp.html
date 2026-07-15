@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume Map · 简历能力地图 MVP 原型</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#fff; --ink:#1f2733; --sub:#5b6675; --line:#e3e8ef;
+    --brand:#2f6df6; --brand-soft:#eaf1ff; --warn:#e8920b; --warn-soft:#fff4e0;
+    --danger:#d9453d; --danger-soft:#fdeceb; --ok:#1f9d6b; --ok-soft:#e6f6ee;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.65;font-size:15px}
+  .top{background:linear-gradient(135deg,#2f6df6,#5b8def);color:#fff;padding:22px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .top h1{margin:0;font-size:21px;font-weight:700}
+  .top .desc{opacity:.9;font-size:13px;margin-top:3px}
+  .top .tag{background:rgba(255,255,255,.18);padding:5px 12px;border-radius:20px;font-size:12px}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 70px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:18px}
+  .card h2{font-size:17px;margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--brand-soft)}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .row>div{flex:1;min-width:240px}
+  label{font-size:13px;color:var(--sub);font-weight:600;display:block;margin:0 0 6px}
+  textarea{width:100%;height:170px;padding:12px;border:1px solid var(--line);border-radius:10px;
+    font-size:13.5px;resize:vertical;font-family:inherit;line-height:1.6}
+  select,input[type=file]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff}
+  .btn{display:inline-flex;align-items:center;gap:6px;background:var(--brand);color:#fff;border:none;
+    padding:11px 20px;border-radius:10px;font-size:14.5px;font-weight:600;cursor:pointer;transition:.15s}
+  .btn:hover{background:#2459d6}
+  .btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+  .btn.ghost:hover{background:var(--brand-soft)}
+  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .hint{font-size:12.5px;color:var(--sub);margin-top:6px}
+  .err{color:var(--danger);font-size:12.5px;margin-top:6px;display:none}
+  /* 结果区 */
+  #result{display:none}
+  .match-badge{display:inline-block;background:var(--brand-soft);color:var(--brand);font-weight:700;
+    padding:6px 14px;border-radius:20px;font-size:14px}
+  .grid2{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  svg{display:block;margin:0 auto}
+  .dim-row{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .dim-name{width:130px;font-size:13px;flex-shrink:0}
+  .bar{flex:1;height:14px;background:#eef1f6;border-radius:8px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:8px}
+  .dim-score{width:42px;text-align:right;font-weight:700;font-size:13px}
+  .dim-comment{font-size:12px;color:var(--sub);margin:-4px 0 8px 140px}
+  .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:700}
+  .p0{background:var(--danger-soft);color:var(--danger)}
+  .p1{background:var(--warn-soft);color:var(--warn)}
+  .p2{background:var(--brand-soft);color:var(--brand)}
+  .lv高{background:var(--danger-soft);color:var(--danger)}
+  .lv中{background:var(--warn-soft);color:var(--warn)}
+  .risk{border-left:4px solid var(--danger);background:var(--danger-soft);padding:11px 14px;border-radius:0 9px 9px 0;margin:10px 0}
+  .risk.lv中{border-left-color:var(--warn);background:var(--warn-soft)}
+  .risk .rt{font-weight:700;font-size:13.5px;margin-bottom:3px}
+  .risk .rf{font-size:12.5px;color:#33404f}
+  .plan{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:9px 0;display:flex;gap:12px;align-items:flex-start}
+  .plan .pn{font-weight:700;font-size:13px;white-space:nowrap;padding-top:1px}
+  .plan .pa{font-size:13.5px}
+  .plan .po{font-size:12px;color:var(--sub);margin-top:2px}
+  .note{background:var(--brand-soft);border-left:4px solid var(--brand);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;margin:12px 0}
+  .legend{font-size:12px;color:var(--sub);text-align:center;margin-top:4px}
+  .prototype-tag{position:fixed;bottom:14px;right:16px;background:#fff;border:1px solid var(--line);
+    color:var(--sub);font-size:11.5px;padding:5px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);z-index:50}
+  @media print{
+    .top,.input-card,.btn-row,.prototype-tag{display:none!important}
+    body{background:#fff}
+    .wrap{max-width:none;padding:0}
+    .card{border:none;break-inside:avoid;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <h1>🗺️ Resume Map · 简历能力地图</h1>
+    <div class="desc">上传简历 → 选择目标岗位 → 一键生成能力雷达图 / 风险点 / 补强路线（V0 规则引擎 · 零 API 依赖）</div>
+  </div>
+  <span class="tag">MVP 原型 · 规则版</span>
+</div>
+
+<div class="wrap">
+  <!-- 输入区 -->
+  <div class="card input-card">
+    <h2>① 输入简历</h2>
+    <div class="row">
+      <div>
+        <label>粘贴简历文本</label>
+        <textarea id="resumeText" placeholder="在此粘贴简历全文，或上传 PDF 文件…"></textarea>
+        <div class="btn-row">
+          <button class="btn ghost" id="sampleBtn">填入示例简历</button>
+        </div>
+      </div>
+      <div>
+        <label>上传文件（PDF / TXT）</label>
+        <input type="file" id="fileInput" accept=".pdf,.txt">
+        <div class="hint">PDF 通过浏览器内 pdf.js 解析；TXT 直接读取。DOCX 原型暂不支持，请粘贴文本。</div>
+        <div class="err" id="fileErr"></div>
+        <label style="margin-top:14px">选择目标岗位</label>
+        <select id="roleSelect">
+          <option value="ai_pm">AI 产品经理</option>
+          <option value="data">数据分析</option>
+          <option value="fe">前端开发</option>
+        </select>
+        <div class="hint">不同岗位加载不同能力维度库与评分权重。</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="genBtn">⚡ 生成能力地图</button>
+    </div>
+    <div class="err" id="genErr"></div>
+  </div>
+
+  <!-- 结果区 -->
+  <div id="result">
+    <div class="card">
+      <h2>② 能力地图报告</h2>
+      <div style="margin-bottom:6px">岗位匹配度（加权）：<span class="match-badge" id="matchBadge">—</span>
+        <span class="hint" style="margin-left:8px">规则初评，仅供参考</span></div>
+      <div class="grid2">
+        <div>
+          <svg id="radar" viewBox="0 0 360 350" width="360" height="350"></svg>
+          <div class="legend">图 · 各维度能力评分（0-100）</div>
+        </div>
+        <div id="dimList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>③ 面试风险点</h2>
+      <div id="riskList"></div>
+      <div class="note">风险点由规则识别（强词无证据 / 精确数字无口径 / 核心维度薄弱）。面试前对照准备话术，避免被追问露馅。</div>
+    </div>
+
+    <div class="card">
+      <h2>④ 补强路线（按优先级）</h2>
+      <div id="planList"></div>
+      <div class="note">排雷优先于补强：先把高风险点与核心薄弱维度稳住，再按 P0→P2 顺序把"看起来会"的补成真本事。</div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="window.print()">📄 导出 PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="prototype-tag">Prototype · 规则引擎 Mock</div>
+
+<script>
+/* ============ 岗位能力维度库 ============ */
+const ROLE_LIB = {
+  ai_pm: {
+    name:'AI 产品经理',
+    dims:[
+      {key:'数据分析能力', weight:20, kws:['数据','分析','python','pandas','mysql','sql','建模','auc','指标','可视化','复购','预测','报表','统计']},
+      {key:'AI工具与落地', weight:20, kws:['ai','大模型','llm','prompt','rag','千问','通义','claude','workbuddy','智能体','agent','微调','部署','gpt','问答']},
+      {key:'产品基本功', weight:20, kws:['产品','prd','需求','原型','墨刀','交互','用户故事','竞品','axure','设计','功能','调研']},
+      {key:'技术概念理解', weight:15, kws:['api','接口','后端','前端','vue','部署','云服务','数据库','架构','小程序','开发','vite']},
+      {key:'业务理解', weight:15, kws:['业务','用户','商业化','增长','运营','行业','场景','b端','c端','流程','痛点']},
+      {key:'表达与诚实度', weight:10, kws:[], special:true}
+    ],
+    planMap:{
+      '数据分析能力':{action:'补一个量化数据分析小项目（如用 Pandas 做用户/销售分析）', out:'可写进简历的分析报告'},
+      'AI工具与落地':{action:'把"用过 AI 工具"变成"用 AI 做出过什么"——沉淀 1 个 AI 落地/评测案例', out:'AI 案例文档（可直接写进简历）'},
+      '产品基本功':{action:'完整练写一份 PRD（需求背景→用户故事→功能列表→优先级）', out:'可讲可展示的 PRD'},
+      '技术概念理解':{action:'搞懂 API / 部署 / 成本概念，能和技术同事对话', out:'技术概念笔记'},
+      '业务理解':{action:'研究目标行业的产业链与商业模式', out:'行业分析笔记'}
+    }
+  },
+  data: {
+    name:'数据分析',
+    dims:[
+      {key:'数据处理', weight:30, kws:['python','pandas','numpy','清洗','数据处理','excel','etl']},
+      {key:'统计建模', weight:25, kws:['建模','机器学习','回归','分类','auc','预测','聚类','算法','模型']},
+      {key:'SQL与数据库', weight:20, kws:['sql','mysql','数据库','查询','hive','数仓','clickhouse']},
+      {key:'可视化', weight:15, kws:['可视化','tableau','echarts','图表','报表','powerbi','bi']},
+      {key:'业务理解', weight:10, kws:['业务','指标','分析','运营','增长']},
+      {key:'表达与诚实度', weight:0, kws:[], special:true}
+    ],
+    planMap:{
+      '数据处理':{action:'做一个完整数据清洗项目（缺失值/异常值处理）', out:'清洗流程文档'},
+      '统计建模':{action:'跑通一个端到端建模项目（如复购预测）', out:'建模报告（含 AUC 等指标）'},
+      'SQL与数据库':{action:'练习复杂 SQL（窗口函数/多表关联）', out:'SQL 练习集'},
+      '可视化':{action:'用 ECharts/Tableau 做一份业务 Dashboard', out:'可视化看板'},
+      '业务理解':{action:'结合业务解读数据，而不只是出数', out:'业务分析笔记'}
+    }
+  },
+  fe: {
+    name:'前端开发',
+    dims:[
+      {key:'框架能力', weight:30, kws:['vue','react','javascript','typescript','小程序','组件','angular']},
+      {key:'工程化', weight:20, kws:['webpack','vite','构建','npm','打包','babel','eslint']},
+      {key:'基础', weight:25, kws:['html','css','布局','响应式','动画','flex','grid']},
+      {key:'协作', weight:15, kws:['原型','设计','接口','联调','axure','figma']},
+      {key:'性能优化', weight:10, kws:['性能','优化','测试','seo','懒加载']},
+      {key:'表达与诚实度', weight:0, kws:[], special:true}
+    ],
+    planMap:{
+      '框架能力':{action:'用 Vue3/React 做一个完整项目并部署上线', out:'可访问的项目 Demo'},
+      '工程化':{action:'自己配置一次 Vite/Webpack 构建链', out:'构建配置笔记'},
+      '基础':{action:'练 CSS 布局与响应式（Flex/Grid）', out:'布局练习页'},
+      '协作':{action:'学画原型/读设计稿，提升与设计协作', out:'原型练习'},
+      '性能优化':{action:'给项目做一次性能优化并量化结果', out:'优化报告'}
+    }
+  }
+};
+
+/* ============ 评分引擎（规则） ============ */
+function scoreResume(text, roleKey){
+  const lib = ROLE_LIB[roleKey];
+  const lower = text.toLowerCase();
+  const dims = [];
+  lib.dims.forEach(d=>{
+    if(d.special) return;
+    const hits = [];
+    d.kws.forEach(k=>{ if(lower.includes(k.toLowerCase())) hits.push(k); });
+    const matched = [...new Set(hits)];
+    const score = matched.length===0 ? 18 : Math.min(100, 20 + matched.length*15);
+    dims.push({key:d.key, weight:d.weight, score, matched,
+      comment: matched.length ? '命中证据：'+matched.slice(0,8).join('、') : '未检测到相关证据关键词'});
+  });
+  const risks = detectRisks(text, dims, lib);
+  const honest = Math.max(35, 100 - risks.length*16);
+  dims.push({key:'表达与诚实度', weight:10, score:honest, matched:[],
+    comment:'识别到 '+risks.length+' 个风险点，诚实度评分 '+honest});
+  // 加权匹配度
+  let wsum=0, w=0;
+  dims.forEach(d=>{ if(d.weight>0){ wsum+=d.score*d.weight; w+=d.weight; } });
+  const match = Math.round(wsum/w);
+  return {dims, risks, match, lib};
+}
+
+function detectRisks(text, dims, lib){
+  const risks=[];
+  const avg = Math.round(dims.reduce((s,d)=>s+d.score,0)/dims.length);
+  if(/(熟悉|精通|深度|主导|资深|专家)/.test(text) && avg<62){
+    risks.push({level:'高', title:'强词与能力不匹配',
+      fix:'简历使用"熟悉/精通/主导"等强词，但整体能力评分偏低，易被面试官追问露馅。改为有证据的表述（如"用 X 完成 Y，效果 Z"）。'});
+  }
+  if(/(\d+(\.\d+)?\s?%|\d+\s?\+|\d+\s?倍|auc\s?\d|0\.\d{2,})/i.test(text)){
+    risks.push({level:'中', title:'精确数字缺口径',
+      fix:'简历含精确数字/比率（如 AUC、百分比、倍数），面试必被问"怎么算的"。为每个数字准备一句计算口径说明。'});
+  }
+  dims.forEach(d=>{
+    if(d.weight>=15 && d.score<45 && !d.matched.length){
+      risks.push({level:'高', title:'核心维度「'+d.key+'」薄弱',
+        fix:'该维度是'+lib.name+'的重点项，当前未检到证据。优先补强或调整简历表述，避免被判定"不匹配"。'});
+    }
+  });
+  return risks;
+}
+
+function buildPlan(dims, lib){
+  const weak = dims.filter(d=> d.key!=='表达与诚实度' && d.weight>0 && d.score<85)
+                   .sort((a,b)=>a.score-b.score).slice(0,3);
+  const plan=[];
+  weak.forEach(d=>{
+    const pm = lib.planMap[d.key]; if(!pm) return;
+    const p = d.score<45?'P0':(d.score<66?'P1':'P2');
+    plan.push({priority:p, dim:d.key, action:pm.action, out:pm.out});
+  });
+  if(!plan.some(p=>p.priority==='P0')){
+    plan.unshift({priority:'P0', dim:'AI 产品评测', action:'把"用过 AI"变成"用 AI 做出过什么"，沉淀 1 个可展示的 AI 落地/评测案例', out:'AI 案例文档（可直接写进简历）'});
+  }
+  return plan;
+}
+
+/* ============ 雷达图 ============ */
+function drawRadar(dims){
+  const N=dims.length, cx=180, cy=165, R=115;
+  let h='';
+  [25,50,75,100].forEach(ring=>{
+    const r=R*ring/100; const pts=[];
+    for(let i=0;i<N;i++){const a=-Math.PI/2+i*2*Math.PI/N; pts.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1));}
+    h+='<polygon points="'+pts.join(' ')+'" fill="none" stroke="#e3e8ef"/>';
+  });
+  for(let i=0;i<N;i++){
+    const a=-Math.PI/2+i*2*Math.PI/N;
+    h+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R*Math.cos(a)).toFixed(1)+'" y2="'+(cy+R*Math.sin(a)).toFixed(1)+'" stroke="#e3e8ef"/>';
+    const lx=cx+(R+24)*Math.cos(a), ly=cy+(R+24)*Math.sin(a);
+    h+='<text x="'+lx.toFixed(1)+'" y="'+(ly+4).toFixed(1)+'" font-size="11" fill="#5b6675" text-anchor="middle">'+dims[i].key+'</text>';
+  }
+  let dp=[];
+  for(let i=0;i<N;i++){const a=-Math.PI/2+i*2*Math.PI/N; const r=R*dims[i].score/100; dp.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1));}
+  h+='<polygon points="'+dp.join(' ')+'" fill="rgba(47,109,246,.25)" stroke="#2f6df6" stroke-width="2"/>';
+  dims.forEach((d,i)=>{const a=-Math.PI/2+i*2*Math.PI/N; const r=R*d.score/100;
+    h+='<circle cx="'+(cx+r*Math.cos(a)).toFixed(1)+'" cy="'+(cy+r*Math.sin(a)).toFixed(1)+'" r="3" fill="#2f6df6"/>';});
+  document.getElementById('radar').innerHTML=h;
+}
+
+function colorOf(s){ return s<45?'#d9453d':(s<66?'#e8920b':'#1f9d6b'); }
+
+/* ============ 渲染 ============ */
+function render(res){
+  drawRadar(res.dims);
+  const mb=document.getElementById('matchBadge');
+  mb.textContent=res.match+' / 100';
+  mb.style.background = res.match<50?'#fdeceb':(res.match<70?'#fff4e0':'#e6f6ee');
+  mb.style.color = res.match<50?'#d9453d':(res.match<70?'#e8920b':'#1f9d6b');
+
+  document.getElementById('dimList').innerHTML = res.dims.map(d=>(
+    '<div class="dim-row"><div class="dim-name">'+d.key+'</div>'+
+    '<div class="bar"><i style="width:'+d.score+'%;background:'+colorOf(d.score)+'"></i></div>'+
+    '<div class="dim-score" style="color:'+colorOf(d.score)+'">'+d.score+'</div></div>'+
+    '<div class="dim-comment">'+d.comment+'</div>'
+  )).join('');
+
+  document.getElementById('riskList').innerHTML = res.risks.length ? res.risks.map(r=>(
+    '<div class="risk lv'+r.level+'"><div class="rt"><span class="pill lv'+r.level+'">'+r.level+'</span> '+r.title+'</div>'+
+    '<div class="rf">'+r.fix+'</div></div>'
+  )).join('') : '<div class="note">未识别到明显风险点。仍建议人工复核表述准确性。</div>';
+
+  document.getElementById('planList').innerHTML = buildPlan(res.dims, res.lib).map(p=>(
+    '<div class="plan"><span class="pill '+p.priority.toLowerCase()+'">'+p.priority+'</span>'+
+    '<div><div class="pa"><b>'+p.dim+'</b>：'+p.action+'</div><div class="po">产出：'+p.out+'</div></div></div>'
+  )).join('');
+
+  document.getElementById('result').style.display='block';
+  document.getElementById('result').scrollIntoView({behavior:'smooth'});
+}
+
+/* ============ 交互 ============ */
+document.getElementById('genBtn').addEventListener('click',()=>{
+  const err=document.getElementById('genErr'); err.style.display='none';
+  const text=document.getElementById('resumeText').value.trim();
+  if(!text){ err.textContent='请先粘贴简历文本或上传文件。'; err.style.display='block'; return; }
+  const role=document.getElementById('roleSelect').value;
+  const res=scoreResume(text, role);
+  render(res);
+});
+
+document.getElementById('sampleBtn').addEventListener('click',()=>{
+  document.getElementById('resumeText').value =
+"候选人\n求职意向：AI 产品经理\n教育：某双一流高校 某专业 本科\n\n经历：\n"+
+"1. 某产业数字化平台 产品助理：负责需求调研、PRD 编写、墨刀原型设计，协调前端 Vue 开发，平台网页+小程序上线。\n"+
+"2. 某知识问答系统：熟悉 RAG 与 Prompt 工程，将知识入库接大模型，实现问答。\n"+
+"3. 某游戏中文 Wiki 站：独立用 Vue3 + vue-router 搭建，含 85KB 卡牌数据提取。\n"+
+"4. 复购预测项目：用 Python / Pandas / MySQL 建模，AUC 0.8959，服务 50+ 农户，效率提升百倍。\n\n"+
+"技能：熟悉 SQL、Python；精通数据分析；深度使用 AI 工具（WorkBuddy / Claude / 千问）。";
+});
+
+/* ============ PDF 解析 ============ */
+function loadPdfJs(){
+  return new Promise((resolve,reject)=>{
+    if(window.pdfjsLib){resolve();return;}
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=()=>{ try{ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; resolve(); }catch(e){ reject(e);} };
+    s.onerror=()=>reject(new Error('pdfjs load fail'));
+    document.head.appendChild(s);
+  });
+}
+document.getElementById('fileInput').addEventListener('change',async (e)=>{
+  const err=document.getElementById('fileErr'); err.style.display='none';
+  const f=e.target.files[0]; if(!f) return;
+  const ta=document.getElementById('resumeText');
+  try{
+    if(f.name.toLowerCase().endsWith('.txt')){
+      ta.value=await f.text();
+    }else if(f.name.toLowerCase().endsWith('.pdf')){
+      await loadPdfJs();
+      const buf=await f.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      let txt='';
+      for(let i=1;i<=pdf.numPages;i++){ const p=await pdf.getPage(i); const c=await p.getTextContent(); txt+=c.items.map(it=>it.str).join(' ')+'\n'; }
+      ta.value=txt.trim();
+    }else{
+      err.textContent='暂不支持该格式，请粘贴文本或上传 PDF / TXT。'; err.style.display='block'; return;
+    }
+    err.style.display='none';
+  }catch(ex){
+    err.textContent='文件解析失败（'+ex.message+'）。请直接粘贴简历文本。'; err.style.display='block';
+  }
+});
+</script>
+</body>
+</html>
