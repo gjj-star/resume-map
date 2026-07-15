@@ -1,0 +1,18 @@
+# ===== 严禁入库：WorkBuddy 项目记忆数据 =====
+# 包含个人简历分析、能力评估、工作日志等敏感信息，绝不外泄
+.workbuddy/
+
+# ===== 系统 / 编辑器 =====
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+
+# ===== 环境 / 依赖 =====
+node_modules/
+__pycache__/
+.venv/
+.env
+.env.*

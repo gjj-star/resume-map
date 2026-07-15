@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI竞品雷达 · Prototype</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --bg2:#0d1220; --card:rgba(255,255,255,.045);
+    --line:rgba(255,255,255,.09); --txt:#e6e9f0; --sub:#94a3b8;
+    --acc1:#6366f1; --acc2:#8b5cf6; --acc3:#22d3ee;
+    --ok:#34d399; --warn:#fbbf24; --bad:#fb7185;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%,rgba(139,92,246,.18),transparent 60%),
+               radial-gradient(900px 500px at 0% 10%,rgba(34,211,238,.10),transparent 55%),
+               linear-gradient(180deg,var(--bg),var(--bg2));
+    color:var(--txt); min-height:100%; padding-bottom:60px;
+  }
+  a{color:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  /* header */
+  header{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);
+    background:rgba(10,14,26,.7);border-bottom:1px solid var(--line)}
+  .hbar{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:18px;letter-spacing:.3px}
+  .logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--acc1),var(--acc2));box-shadow:0 6px 20px rgba(99,102,241,.45)}
+  .logo svg{width:20px;height:20px}
+  .tabs{display:flex;gap:6px;background:rgba(255,255,255,.05);padding:4px;border-radius:12px;border:1px solid var(--line)}
+  .tab{padding:7px 16px;border-radius:9px;font-size:13.5px;color:var(--sub);cursor:pointer;border:none;background:transparent;font-weight:600}
+  .tab.active{background:linear-gradient(135deg,var(--acc1),var(--acc2));color:#fff}
+  .tag-proto{font-size:11px;color:var(--acc3);border:1px solid rgba(34,211,238,.35);
+    padding:2px 8px;border-radius:20px;background:rgba(34,211,238,.08)}
+  /* hero */
+  .hero{padding:54px 0 26px;text-align:center}
+  .hero h1{font-size:42px;line-height:1.15;font-weight:800;letter-spacing:-.5px}
+  .hero h1 .g{background:linear-gradient(135deg,var(--acc3),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--sub);margin-top:14px;font-size:15.5px}
+  .search{margin:30px auto 0;max-width:620px;display:flex;gap:10px;background:var(--card);
+    border:1px solid var(--line);border-radius:16px;padding:10px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+  .search input{flex:1;background:transparent;border:none;outline:none;color:var(--txt);font-size:15px;padding:8px 12px}
+  .search input::placeholder{color:#5b6478}
+  .btn{cursor:pointer;border:none;border-radius:12px;font-weight:700;font-size:14.5px;padding:11px 20px;
+    background:linear-gradient(135deg,var(--acc1),var(--acc2));color:#fff;white-space:nowrap;
+    box-shadow:0 8px 24px rgba(99,102,241,.4);transition:.15s}
+  .btn:hover{transform:translateY(-1px);filter:brightness(1.07)}
+  .btn:active{transform:translateY(0)}
+  .chips{margin:18px auto 0;max-width:620px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .chip{font-size:13px;color:var(--sub);background:rgba(255,255,255,.05);border:1px solid var(--line);
+    padding:6px 13px;border-radius:20px;cursor:pointer;transition:.15s}
+  .chip:hover{color:var(--txt);border-color:rgba(139,92,246,.5)}
+  /* loading */
+  .loading{display:none;text-align:center;padding:60px 0}
+  .spinner{width:46px;height:46px;border-radius:50%;border:3px solid rgba(255,255,255,.12);
+    border-top-color:var(--acc2);animation:spin 1s linear infinite;margin:0 auto 18px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading .lt{color:var(--sub);font-size:14px}
+  .loading .lt b{color:var(--acc3)}
+  /* result */
+  .result{display:none;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .res-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+  .res-head h2{font-size:26px;font-weight:800}
+  .res-head .meta{color:var(--sub);font-size:13px}
+  .insight{margin:14px 0 26px;padding:16px 18px;border-radius:14px;border:1px solid rgba(34,211,238,.3);
+    background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(139,92,246,.06));font-size:15px;line-height:1.6}
+  .insight b{color:var(--acc3)}
+  .sec-title{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sub);margin:30px 0 14px;font-weight:700}
+  .dims{display:flex;flex-wrap:wrap;gap:9px}
+  .dim{font-size:13px;padding:7px 13px;border-radius:10px;background:rgba(139,92,246,.12);
+    border:1px solid rgba(139,92,246,.3);color:#c4b5fd}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:14px}
+  .ccard{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px;cursor:pointer;
+    transition:.16s;position:relative;overflow:hidden}
+  .ccard:hover{border-color:rgba(99,102,241,.55);transform:translateY(-2px);background:rgba(255,255,255,.07)}
+  .ccard .top{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+  .ava{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;font-size:15px}
+  .ccard h3{font-size:16px;font-weight:700}
+  .ccard .pos{font-size:12.5px;color:var(--sub);margin-top:2px}
+  .hl{margin-top:11px;display:flex;flex-direction:column;gap:6px}
+  .hl div{font-size:13px;color:#cbd3e1;display:flex;gap:7px;align-items:flex-start}
+  .hl div::before{content:"▸";color:var(--acc2);font-size:11px;margin-top:2px}
+  .price{margin-top:12px;font-size:12.5px;color:var(--warn);font-weight:600}
+  .comment{margin-top:9px;font-size:12.5px;color:var(--sub);line-height:1.5;border-top:1px dashed var(--line);padding-top:9px}
+  /* table */
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--sub);font-weight:700;background:rgba(255,255,255,.03);position:sticky;top:0}
+  td:first-child,th:first-child{color:var(--txt);font-weight:600}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+  .d-ok{background:var(--ok)} .d-warn{background:var(--warn)} .d-bad{background:var(--bad)}
+  /* timeline */
+  .tl{position:relative;padding-left:22px}
+  .tl::before{content:"";position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--line)}
+  .tl-item{position:relative;margin-bottom:16px}
+  .tl-item::before{content:"";position:absolute;left:-19px;top:5px;width:11px;height:11px;border-radius:50%;
+    background:linear-gradient(135deg,var(--acc1),var(--acc2));box-shadow:0 0 0 4px rgba(99,102,241,.15)}
+  .tl-date{font-size:12px;color:var(--acc3);font-weight:700}
+  .tl-text{font-size:13.5px;color:#cbd3e1;margin-top:3px;line-height:1.55}
+  /* actions */
+  .actions{display:flex;gap:10px;margin:28px 0 10px;flex-wrap:wrap}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt);box-shadow:none}
+  .btn.ghost:hover{border-color:var(--acc2)}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(3,6,14,.72);backdrop-filter:blur(4px);z-index:50;
+    display:none;align-items:center;justify-content:center;padding:20px}
+  .modal{width:min(560px,100%);background:linear-gradient(180deg,#11162a,#0d1220);border:1px solid var(--line);
+    border-radius:18px;padding:24px;animation:fade .25s ease;max-height:86vh;overflow:auto}
+  .modal h3{font-size:22px;font-weight:800;display:flex;align-items:center;gap:12px}
+  .modal .close{float:right;cursor:pointer;color:var(--sub);font-size:22px;line-height:1;margin-top:-4px}
+  .modal .mrow{margin-top:16px}
+  .modal .mlabel{font-size:12px;color:var(--acc3);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+  .modal .mval{font-size:14px;color:#dbe2f0;margin-top:6px;line-height:1.65}
+  .ai-note{margin-top:18px;padding:14px 16px;border-radius:12px;border:1px solid rgba(34,211,238,.3);
+    background:rgba(34,211,238,.07);font-size:13.5px;color:#cfe9f1;line-height:1.6}
+  /* doc page */
+  .doc{display:none;animation:fade .4s ease;padding-top:30px}
+  .doc h2{font-size:24px;font-weight:800;margin-bottom:6px}
+  .doc .lead{color:var(--sub);margin-bottom:24px}
+  .card2{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+  .card2 h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:9px}
+  .card2 h3 .n{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,var(--acc1),var(--acc2));
+    display:grid;place-items:center;font-size:12px;color:#fff}
+  .kv{display:grid;grid-template-columns:140px 1fr;gap:8px 14px;font-size:14px}
+  .kv .k{color:var(--sub);font-weight:600}
+  .kv .v{color:#dbe2f0;line-height:1.6}
+  ul.li{list-style:none;display:flex;flex-direction:column;gap:8px}
+  ul.li li{font-size:14px;color:#dbe2f0;display:flex;gap:9px;align-items:flex-start;line-height:1.55}
+  ul.li li::before{content:"●";color:var(--acc2);font-size:9px;margin-top:6px}
+  .road{display:flex;gap:0;flex-wrap:wrap}
+  .road .step{flex:1;min-width:150px;border:1px solid var(--line);border-radius:12px;padding:14px;margin:4px;background:var(--card)}
+  .road .step .s{font-size:12px;color:var(--acc3);font-weight:700}
+  .road .step .t{font-size:14.5px;font-weight:700;margin:6px 0 4px}
+  .road .step .d{font-size:12.5px;color:var(--sub);line-height:1.5}
+  .foot{text-align:center;color:#4b5468;font-size:12px;margin-top:40px}
+  @media print{
+    header,.hero,.chips,.search,.loading,.actions{display:none!important}
+    body{background:#fff;color:#111}
+    .result{display:block!important}
+    .ccard,.tbl-wrap,.insight{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap hbar">
+    <div class="brand">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2" fill="#fff" stroke="none"/><path d="M12 12l6-4M12 12l-5 5"/></svg></span>
+      AI竞品雷达 <span class="tag-proto">Prototype · Mock数据</span>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-page="demo">原型演示</button>
+      <button class="tab" data-page="doc">设计说明</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ DEMO ============ -->
+<div class="wrap" id="page-demo">
+  <section class="hero">
+    <h1>输入一个赛道，<span class="g">AI 帮你扫描竞品</span></h1>
+    <p>自动生成对比维度 · 竞品矩阵 · 近期动态摘要。让竞品分析从 2 天缩短到 2 分钟。</p>
+    <div class="search">
+      <input id="q" placeholder="例如：AI笔记工具 / 国内大模型 / AI编程助手" />
+      <button class="btn" id="go">生成雷达</button>
+    </div>
+    <div class="chips" id="chips">
+      <span class="chip">AI笔记工具</span>
+      <span class="chip">AI编程助手</span>
+      <span class="chip">国内大模型</span>
+      <span class="chip">AI绘画</span>
+    </div>
+  </section>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="lt">AI 正在扫描竞品生态、抓取动态、生成对比维度…<br><b id="lq"></b></div>
+  </div>
+
+  <section class="result" id="result">
+    <div class="res-head">
+      <div><h2 id="r-title"></h2><div class="meta" id="r-meta"></div></div>
+    </div>
+    <div class="insight" id="r-insight"></div>
+
+    <div class="sec-title">对比维度</div>
+    <div class="dims" id="r-dims"></div>
+
+    <div class="sec-title">竞品矩阵</div>
+    <div class="grid" id="r-grid"></div>
+
+    <div class="sec-title">功能对比</div>
+    <div class="tbl-wrap"><table id="r-table"></table></div>
+
+    <div class="sec-title">近期动态</div>
+    <div class="tl" id="r-tl"></div>
+
+    <div class="actions">
+      <button class="btn" onclick="window.print()">导出 PDF</button>
+      <button class="btn ghost" id="again">换一批 / 重新生成</button>
+      <button class="btn ghost" id="back">← 返回首页</button>
+    </div>
+  </section>
+</div>
+
+<!-- ============ DOC ============ -->
+<div class="wrap doc" id="page-doc">
+  <h2>AI竞品雷达 · 产品设计说明</h2>
+  <div class="lead">高保真交互原型（本页随原型一同交付）。下文为 PRD 摘要，用于说明产品定位、假设与迭代路线。</div>
+
+  <div class="card2">
+    <h3><span class="n">1</span>产品定位</h3>
+    <div class="kv">
+      <div class="k">一句话</div><div class="v">面向产品/战略/投资人群的 AI 竞品分析助手：输入任意赛道，秒级生成结构化竞品对比与动态情报。</div>
+      <div class="k">价值主张</div><div class="v">把"人工搜集 + 排版 2 天"的竞品分析，压缩为"输入即出报告"的 2 分钟动作，且输出格式统一、可复用。</div>
+      <div class="k">当前形态</div><div class="v">高保真网页原型，数据为 Mock。用于验证信息架构与交互，未接真实模型。</div>
+    </div>
+  </div>
+
+  <div class="card2">
+    <h3><span class="n">2</span>目标用户与场景</h3>
+    <ul class="li">
+      <li><b>产品经理</b>：新需求立项前快速摸底赛道格局，做汇报素材。</li>
+      <li><b>战略/商业分析</b>：周期性跟踪竞品动作，输出监测简报。</li>
+      <li><b>投资人/研究员</b>：初筛赛道时快速建立对比框架。</li>
+      <li><b>典型场景</b>：老板丢来"看看 AI 笔记现在谁家强" → 打开雷达输入 → 拿报告进会。</li>
+    </ul>
+  </div>
+
+  <div class="card2">
+    <h3><span class="n">3</span>核心功能</h3>
+    <ul class="li">
+      <li><b>智能维度生成</b>：根据赛道自动推荐合适的对比维度（而非固定模板）。</li>
+      <li><b>竞品矩阵</b>：卡片化呈现各家定位、亮点、定价与一句点评。</li>
+      <li><b>功能对比表</b>：可勾选的功能矩阵，支持强弱可视化。</li>
+      <li><b>动态情报</b>：近期行业/产品动作时间线，带日期与摘要。</li>
+      <li><b>导出</b>：一键生成 PDF / 分享链接，便于进会汇报。</li>
+    </ul>
+  </div>
+
+  <div class="card2">
+    <h3><span class="n">4</span>假设的 AI 能力（接真实模型时）</h3>
+    <div class="kv">
+      <div class="k">模型</div><div class="v">LLM（如 DeepSeek / 通义 / GPT 类），后端代理调用，前端不暴露密钥。</div>
+      <div class="k">Prompt 策略</div><div class="v">赛道分类 → 维度模板召回 → 竞品召回（RAG/检索）→ 结构化 JSON 输出（固定 schema 保证前端可渲染）。</div>
+      <div class="k">数据来源</div><div class="v">公开资讯/官网/应用商店评论；动态情报接新闻/社媒检索 API。</div>
+      <div class="k">可靠性</div><div class="v">输出须带"数据来源/时间"标签，关键结论可溯源，避免幻觉。</div>
+    </div>
+  </div>
+
+  <div class="card2">
+    <h3><span class="n">5</span>信息架构</h3>
+    <div class="kv">
+      <div class="k">输入层</div><div class="v">首页搜索框 + 热门赛道快捷入口 + 历史记录。</div>
+      <div class="k">处理层</div><div class="v">加载态（扫描动画）→ 结构化生成。</div>
+      <div class="k">结果层</div><div class="v">洞察 → 维度 → 竞品矩阵 → 对比表 → 动态 → 导出/重生成。</div>
+      <div class="k">详情层</div><div class="v">竞品卡片点击 → 弹窗展示深度 AI 点评。</div>
+    </div>
+  </div>
+
+  <div class="card2">
+    <h3><span class="n">6</span>迭代路线</h3>
+    <div class="road">
+      <div class="step"><div class="s">V0 当前</div><div class="t">高保真原型</div><div class="d">验证交互与信息架构，Mock 数据。</div></div>
+      <div class="step"><div class="s">V1</div><div class="t">接真实模型</div><div class="d">接入 LLM + 检索，输出可溯源。</div></div>
+      <div class="step"><div class="s">V2</div><div class="t">监测与协作</div><div class="d">订阅赛道、周报推送、团队共享看板。</div></div>
+      <div class="step"><div class="s">V3</div><div class="t">深度洞察</div><div class="d">趋势预测、SWOT 自动生成、导出 PPT。</div></div>
+    </div>
+  </div>
+
+  <div class="card2">
+    <h3><span class="n">7</span>数据说明</h3>
+    <div class="v" style="font-size:13.5px;color:var(--sub);line-height:1.6">本原型中所有竞品信息、定价、动态均为演示用 Mock 数据，不代表真实情况。接真实模型后，数据应由检索结果实时生成并标注来源。</div>
+  </div>
+
+  <div class="foot">由 老布 × 小白 在实习空窗期搓出 · 作品集用途 · 2026</div>
+</div>
+
+<!-- modal -->
+<div class="mask" id="mask">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const PALETTE=[["#6366f1","#8b5cf6"],["#22d3ee","#3b82f6"],["#34d399","#10b981"],["#f59e0b","#ef4444"],["#a855f7","#ec4899"],["#06b6d4","#14b8a6"]];
+function colorFor(i){const p=PALETTE[i%PALETTE.length];return `linear-gradient(135deg,${p[0]},${p[1]})`}
+function initials(n){return n.replace(/[^A-Za-z一-龥]/g,'').slice(0,2)}
+
+/* ---- Mock 数据集 ---- */
+const DB={
+  "ai笔记":{
+    track:["笔记","note","备忘录","知识管理"],
+    title:"AI 笔记工具", insight:"赛道已从『笔记+AI』走向『<b>AI 原生知识操作系统</b>』——胜负手在<b>自动关联与检索</b>，而非写作润色。国内玩家正密集补齐总结能力，但底层关联智能仍落后海外。",
+    dims:["AI 写作/润色","自动关联/检索","协作能力","价格竞争力","生态完整性"],
+    competitors:[
+      {name:"Notion AI",pos:"全功能协作空间 + AI",hl:["块编辑器体验最成熟","AI 写作/总结/翻译一体化","海量模板与数据库"],price:"个人 $10/月，AI 另购 $10",comment:"生态最全，但 AI 偏通用，关联智能一般。"},
+      {name:"Mem",pos:"AI 原生笔记",hl:["自动关联相关笔记","智能检索最强","无文件夹的流式组织"],price:"免费版 + $8/月",comment:"关联能力惊艳，但协作与企业功能偏弱。"},
+      {name:"Coda AI",pos:"文档 + 表格 + AI 自动化",hl:["AI 按钮一键生成","强自动化与表格","模板市场丰富"],price:"免费 + $10/月",comment:"自动化属性强，适合运营/项目管理。"},
+      {name:"印象笔记·AI",pos:"老牌笔记 + 国内 AI",hl:["中文语料适配好","剪藏与搜索稳健","近期上线 AI 总结"],price:"¥ 会员制",comment:"基本盘稳，AI 能力仍处追赶阶段。"}
+    ],
+    table:{head:["能力","Notion AI","Mem","Coda AI","印象笔记"],rows:[
+      ["AI 写作","ok","warn","ok","ok"],["自动关联","warn","ok","warn","bad"],
+      ["协作","ok","warn","ok","ok"],["价格友好","warn","ok","ok","ok"],["生态","ok","warn","ok","ok"]
+    ]},
+    news:[
+      {d:"2026-06",t:"Notion AI 推出会议纪要自动生成与 Action Item 提取。"},
+      {d:"2026-05",t:"Mem 完成新一轮融资，重点发力企业版与团队知识库。"},
+      {d:"2026-04",t:"国内印象笔记、有道云笔记密集上线 AI 一键总结功能。"},
+      {d:"2026-03",t:"Coda AI 上线『AI 表格公式』，可在单元格内调用大模型。"}
+    ]
+  },
+  "ai编程":{
+    track:["编程","代码","coding","copilot","开发","cursor"],
+    title:"AI 编程助手", insight:"竞争焦点已从『<b>补全</b>』升级到『<b>Agent 自主改代码</b>』。Cursor 凭上下文与 Agent 体验领跑，<b>国内模型正以价格与中文场景切入</b>。",
+    dims:["代码补全","Agent 能力","上下文长度","价格竞争力","IDE 支持"],
+    competitors:[
+      {name:"Cursor",pos:"AI 原生编辑器",hl:["全仓库上下文理解","Composer 多文件编辑","Agent 自主修复"],price:"免费 + $20/月",comment:"体验标杆，重度用户首选。"},
+      {name:"GitHub Copilot",pos:"生态最广泛的 AI 结对",hl:["深度集成 VS Code","企业版合规强","Chat 与补全成熟"],price:"$10/月起",comment:"稳妥之选，Agent 能力稍慢半拍。"},
+      {name:"通义灵码",pos:"阿里系国产编程助手",hl:["中文注释理解好","阿里云生态联动","企业私有化部署"],price:"个人免费",comment:"国产替代首选，价格杀手。"},
+      {name:"MarsCode",pos:"字节系云端 IDE + AI",hl:["云端开发环境","AI 问答精准","国内网络友好"],price:"免费公测",comment:"生态尚早期，潜力看字节投入。"}
+    ],
+    table:{head:["能力","Cursor","Copilot","通义灵码","MarsCode"],rows:[
+      ["补全","ok","ok","ok","ok"],["Agent","ok","warn","warn","warn"],
+      ["上下文","ok","warn","ok","ok"],["价格","warn","ok","ok","ok"],["IDE","ok","ok","ok","warn"]
+    ]},
+    news:[
+      {d:"2026-06",t:"Cursor 发布 『Background Agent』，可并行处理多个修复任务。"},
+      {d:"2026-05",t:"GitHub Copilot 推出『Workspace』，支持跨仓库规划。"},
+      {d:"2026-04",t:"通义灵码宣布个人开发者永久免费，加速国产替代。"},
+      {d:"2026-02",t:"MarsCode 上线云端预览，AI 直接运行并调试前端代码。"}
+    ]
+  },
+  "大模型":{
+    track:["大模型","llm","模型","gpt","千问","文心","kimi","豆包","glm"],
+    title:"国内大模型", insight:"同质化严重，差异化落在<b>长文本、多模态、价格</b>三处。Kimi 凭长文本立住，<b>价格战已成获客主手段</b>，推理与 Agent 是下一战场。",
+    dims:["长文本","多模态","推理能力","价格竞争力","生态/插件"],
+    competitors:[
+      {name:"豆包",pos:"字节系全能大模型",hl:["用户量大、入口广","多模态均衡","价格极低"],price:"免费 + 极低价 API",comment:"流量优势明显，C 端触达强。"},
+      {name:"文心一言",pos:"百度系老牌大模型",hl:["搜索/文库数据厚","企业客户基础好","插件生态早"],price:"会员 + API",comment:"ToB 根基深，创新节奏偏稳。"},
+      {name:"通义千问",pos:"阿里系开源代表",hl:["开源版本活跃","阿里云集成","多尺寸覆盖"],price:"免费 + API",comment:"开发者友好，开源社区强。"},
+      {name:"Kimi",pos:"长文本突围者",hl:["超长上下文标杆","深度阅读体验好","学术/研报场景强"],price:"免费 + 会员",comment:"差异化清晰，商业化待验证。"}
+    ],
+    table:{head:["能力","豆包","文心","通义","Kimi"],rows:[
+      ["长文本","ok","ok","ok","ok"],["多模态","ok","ok","ok","warn"],
+      ["推理","ok","ok","ok","ok"],["价格","ok","warn","ok","ok"],["生态","ok","ok","ok","warn"]
+    ]},
+    news:[
+      {d:"2026-06",t:"Kimi 将上下文窗口提升至 200 万 token，再巩固长文本心智。"},
+      {d:"2026-05",t:"豆包宣布 API 调用单价下调 60%，引发新一轮价格战。"},
+      {d:"2026-04",t:"通义千问开源版登顶多项中文基准榜单。"},
+      {d:"2026-03",t:"文心一言接入智能体平台，强化 ToB 工作流。"}
+    ]
+  },
+  "ai绘画":{
+    track:["绘画","图像","image","画图","midjourney","绘画","生图"],
+    title:"AI 绘画 / 生图", insight:"海外 MJ/SD 仍是质量标杆，<b>国内靠『中文理解 + 视频延伸 + 免费』抢用户</b>。竞争正从『出图质量』转向『可控编辑与视频化』。",
+    dims:["出图质量","中文理解","可控编辑","视频延伸","价格竞争力"],
+    competitors:[
+      {name:"Midjourney",pos:"质量标杆",hl:["审美与质感最佳","风格化强","社区活跃"],price:"$10/月起",comment:"质量天花板，中文提示词偏弱。"},
+      {name:"Stable Diffusion",pos:"开源可控之王",hl:["完全本地部署","ControlNet 精细控制","生态插件极多"],price:"免费开源",comment:"可控性最强，门槛也最高。"},
+      {name:"即梦",pos:"字节系生图/视频",hl:["中文提示词友好","生图+视频一体","免费额度大方"],price:"免费 + 会员",comment:"国内体验第一梯队。"},
+      {name:"可灵",pos:"快手系视频生成",hl:["视频时长与质感领先","运动一致性好","中文场景强"],price:"免费 + 会员",comment:"视频方向差异化明显。"}
+    ],
+    table:{head:["能力","MJ","SD","即梦","可灵"],rows:[
+      ["质量","ok","ok","warn","warn"],["中文","warn","warn","ok","ok"],
+      ["可控","warn","ok","ok","ok"],["视频","bad","warn","ok","ok"],["价格","warn","ok","ok","ok"]
+    ]},
+    news:[
+      {d:"2026-06",t:"可灵发布 2 分钟高清视频生成，运动一致性大幅改善。"},
+      {d:"2026-05",t:"Midjourney v8 上线，人物一致性与文字渲染显著提升。"},
+      {d:"2026-04",t:"即梦推出『图生图局部重绘』，编辑可控性追上 SD。"},
+      {d:"2026-03",t:"Stable Diffusion 3.5 开源，落地消费级显卡。"}
+    ]
+  }
+};
+
+function matchDB(q){
+  q=q.toLowerCase();
+  for(const k in DB){ if(DB[k].track.some(t=>q.includes(t.toLowerCase()))) return DB[k]; }
+  return null;
+}
+
+function generic(q){
+  const cap=q.length>14?q.slice(0,14)+"…":q;
+  const names=[`智${cap.slice(0,1)}`,`${cap}Pro`,`云${cap}`,`超级${cap}`];
+  const comp=[
+    {name:names[0],pos:"综合型选手",hl:["功能覆盖广","生态联动强","品牌认知高"],price:"会员制 / 免费版",comment:"头部玩家，无明显短板。"},
+    {name:names[1],pos:"垂直深耕者",hl:["某场景体验极致","用户口碑好","迭代快"],price:"按需付费",comment:"细分赛道有差异化。"},
+    {name:names[2],pos:"云厂商背书",hl:["底层算力稳","企业服务强","合规好"],price:"云资源捆绑",comment:"ToB 渠道优势明显。"},
+    {name:names[3],pos:"新锐挑战者",hl:["增长迅猛","打法灵活","价格激进"],price:"低价/免费",comment:"靠性价比抢量。"}
+  ];
+  return {
+    track:[], title:cap, insight:`这是基于输入「<b>${q}</b>」生成的示例报告（Mock）。真实版本会先<b>判定赛道类型</b>，再召回对应维度模板与竞品库。下方为通用骨架，用于展示产品输出结构。`,
+    dims:["核心功能","用户体验","价格竞争力","增长态势","生态完整性"],
+    competitors:comp,
+    table:{head:["能力",...names],rows:[
+      ["核心功能","ok","ok","ok","warn"],["体验","ok","ok","warn","ok"],
+      ["价格","warn","ok","ok","ok"],["增长","warn","ok","ok","ok"],["生态","ok","warn","ok","warn"]
+    ]},
+    news:[
+      {d:"近期",t:`「${q}」赛道融资事件频发，资本关注度上升。`},
+      {d:"近期",t:`头部玩家密集发布新版，功能边界持续模糊。`},
+      {d:"近期",t:`用户侧对『易用性』与『价格』的权重显著提高。`}
+    ]
+  };
+}
+
+/* ---- 渲染 ---- */
+function dot(s){const m={ok:'d-ok',warn:'d-warn',bad:'d-bad'};const c=m[s]||'d-ok';const t={ok:'强',warn:'中',bad:'弱'}[s]||s;return `<span class="dot ${c}"></span>${t}`}
+
+function render(d,query){
+  document.getElementById("r-title").textContent=d.title;
+  document.getElementById("r-meta").textContent=`输入：「${query}」 · 共 ${d.competitors.length} 家 · 生成于演示环境`;
+  document.getElementById("r-insight").innerHTML=d.insight;
+  document.getElementById("r-dims").innerHTML=d.dims.map(x=>`<span class="dim">${x}</span>`).join("");
+  document.getElementById("r-grid").innerHTML=d.competitors.map((c,i)=>`
+    <div class="ccard" onclick="openModal(${i})">
+      <div class="top">
+        <div class="ava" style="background:${colorFor(i)}">${initials(c.name)}</div>
+        <div><h3>${c.name}</h3><div class="pos">${c.pos}</div></div>
+      </div>
+      <div class="hl">${c.hl.map(h=>`<div>${h}</div>`).join("")}</div>
+      <div class="price">💰 ${c.price}</div>
+      <div class="comment">${c.comment}</div>
+    </div>`).join("");
+  let t=`<thead><tr>${d.table.head.map((h,i)=>`<th>${i===0?'对比维度':h}</th>`).join("")}</tr></thead><tbody>`;
+  d.table.rows.forEach(r=>{
+    t+=`<tr><td>${r[0]}</td>${r.slice(1).map(v=>`<td>${dot(v)}</td>`).join("")}</tr>`;
+  });
+  t+=`</tbody>`;
+  document.getElementById("r-table").innerHTML=t;
+  document.getElementById("r-tl").innerHTML=d.news.map(n=>
+    `<div class="tl-item"><div class="tl-date">${n.d}</div><div class="tl-text">${n.t}</div></div>`).join("");
+  window._cur=d;
+  document.getElementById("loading").style.display="none";
+  document.getElementById("result").style.display="block";
+  document.getElementById("result").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function run(){
+  const q=document.getElementById("q").value.trim();
+  if(!q){document.getElementById("q").focus();return;}
+  document.getElementById("result").style.display="none";
+  document.getElementById("loading").style.display="block";
+  document.getElementById("lq").textContent="「"+q+"」";
+  const d=matchDB(q)||generic(q);
+  setTimeout(()=>render(d,q),1300);
+}
+
+function openModal(i){
+  const c=window._cur.competitors[i];
+  const notes=[
+    `「${c.name}」的核心壁垒在于其${c.hl[0]}的能力组合，当前在${window._cur.dims[0]}维度表现突出。若赛道进入价格战，其${c.price.includes('免费')?'免费策略':'定价结构'}将成为关键变量。`,
+    `对比同行，${c.name}的差异化定位是「${c.pos}」。建议关注其后续在生态与合规侧的动作——这往往是ToB场景的胜负手。`,
+    `风险提示：${c.comment} 在真实尽调中需验证其用户留存与付费转化数据，避免被表层功能矩阵误导。`
+  ];
+  document.getElementById("modal").innerHTML=`
+    <span class="close" onclick="closeModal()">×</span>
+    <h3><span class="ava" style="background:${colorFor(i)};width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:14px">${initials(c.name)}</span>${c.name}</h3>
+    <div class="mrow"><div class="mlabel">定位</div><div class="mval">${c.pos}</div></div>
+    <div class="mrow"><div class="mlabel">核心亮点</div><div class="mval">${c.hl.map(h=>'· '+h).join('<br>')}</div></div>
+    <div class="mrow"><div class="mlabel">定价</div><div class="mval">${c.price}</div></div>
+    <div class="mrow"><div class="mlabel">一句话点评</div><div class="mval">${c.comment}</div></div>
+    <div class="ai-note"><b>🤖 AI 深度点评（Mock）：</b><br>${notes.join('<br><br>')}</div>`;
+  document.getElementById("mask").style.display="flex";
+}
+function closeModal(){document.getElementById("mask").style.display="none"}
+
+/* ---- 事件 ---- */
+document.getElementById("go").onclick=run;
+document.getElementById("q").addEventListener("keydown",e=>{if(e.key==="Enter")run()});
+document.getElementById("chips").addEventListener("click",e=>{
+  if(e.target.classList.contains("chip")){document.getElementById("q").value=e.target.textContent;run();}
+});
+document.getElementById("again").onclick=run;
+document.getElementById("back").onclick=()=>{
+  document.getElementById("result").style.display="none";
+  document.querySelector(".hero").scrollIntoView({behavior:"smooth"});
+};
+document.getElementById("mask").onclick=e=>{if(e.target.id==="mask")closeModal()};
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  const p=t.dataset.page;
+  document.getElementById("page-demo").style.display=p==="demo"?"block":"none";
+  document.getElementById("page-doc").style.display=p==="doc"?"block":"none";
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+</script>
+</body>
+</html>
