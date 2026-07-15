@@ -162,6 +162,47 @@
     <div class="note">结论：飞职卖的是"AI 帮你写"的<b>爽感</b>，不是"写得好"的<b>结果</b>。其官网"深度语义分析 / 精准命中 JD"与实测质量不符，威胁被高估。</div>
   </div>
 
+  <!-- 2·附续 PDF实测证据 -->
+  <div class="card">
+    <h2>二·附续、飞职优化输出原件分析（PDF 实测，2026-07-15）</h2>
+    <p style="font-size:13.5px;margin:4px 0">拆解人将同一份原始简历提交飞职的"简历优化"功能，获得其生成的 PDF 输出文件（Chromium 渲染，7 页）。以下为逐项拆解，与飞职 FAQ 宣传形成强烈反差：</p>
+
+    <h3>A. 基础信息异常</h3>
+    <ul class="kv">
+      <li><span class="k">页数膨胀</span><span>原简历 1 页 → 飞职输出 <b>7 页</b>。任何 HR / 招聘系统面对 7 页应届生简历直接 pass。</span></li>
+      <li><span class="k">日期损坏</span><span>多处项目时间显示 <b>Invalid date</b>（日期字段丢失或格式错误），说明输出管道未做基本校验。</span></li>
+      <li><span class="k">SVG 泄漏</span><span>第 2 页正文中混入大段原始 SVG 路径数据（<code>H79.054c-.179 0-.353.016-.527.024V0L0 10.082...</code>），疑似图片/矢量替换管线翻车。</span></li>
+    </ul>
+
+    <h3>B. 内容质量：模板化注水</h3>
+    <ul class="kv">
+      <li><span class="k">每段经历扩写 5 倍+</span><span>原简历每个项目 2-3 行精炼描述 → 飞职每段展开为 <b>5 大段流水账</b>。以"某病虫害问答系统"为例：原稿约 80 字 → 飞职扩至约 1500 字，增量全为通用套话。</span></li>
+      <li><span class="k">五段式机械模板</span><span>所有经历严格遵循同一结构："启动初期调研→过程描述→协同落地→效果验证→总结展望"。换主语即可套任何人的任何项目——明显是单一 prompt 模板机械填充。</span></li>
+      <li><span class="k">重复话术出现 4+ 次</span><span>"通过团队共同努力…得到广泛认可和好评""在未来的学习和工作中将不断努力提高自己的能力"等万能句在全文重复多次，无信息增量。</span></li>
+      <li><span class="k">硬亮点被稀释埋没</span><span>AUC 0.8959 / 50+ 农户 / 效率百倍 / vibe coding / RAG / 千问等真实亮点虽保留但被数百字废话包裹，HR 不可能从中抓到关键信息。</span></li>
+    </ul>
+
+    <h3>C. 与 FAQ 宣传的反差</h3>
+    <table>
+      <thead><tr><th style="width:200px">飞职 FAQ 原文</th><th>PDF 实测事实</th><th style="width:100px">落差评级</th></tr></thead>
+      <tbody>
+        <tr><td>"30w+ 真实简历数据训练"</td><td>输出为通用模板填充，未见任何"数据训练"带来的个性化或行业适配</td><td><span class="tag w">严重</span></td></tr>
+        <tr><td>"生成的简历 100% 通过 AI 面试筛选"</td><td>7 页注水简历不可能通过任何真实面试筛选（篇幅即淘汰）</td><td><span class="tag w">严重</span></td></tr>
+        <tr><td>"人资简历筛选通过率超过 80%"</td><td>Invalid date + SVG 泄漏 + 流水账，基础质量不过关</td><td><span class="tag w">严重</span></td></tr>
+        <tr><td>"基于专业的简历知识图谱"</td><td>输出结构为机械五段式，未见知识图谱约束痕迹（如岗位关键词权重/行业术语校准）</td><td><span class="tag w">中等</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>D. 归因判断</h3>
+    <ul class="kv">
+      <li><span class="k">模型层</span><span>输出质量符合"廉价 / 免费 API + 无约束 prompt"的特征：生成流畅但空洞、无篇幅控制、无质量门控。与 GPT-4o / 高档模型在严格 prompt 下的输出质量差距明显。</span></li>
+      <li><span class="k">工程层</span><span>缺少输出后处理管线：无篇幅检测（放任 7 页）、无日期格式校验（Invalid date）、无渲染完整性检查（SVG 泄漏）。这些是基本的工程守卫，缺失说明投入浅。</span></li>
+      <li><span class="k">产品层</span><span>"优化"功能的产品定义本身就是错的：它把"更长 = 更好"当隐含假设，没有"只量化不注水 / 控制篇幅 / 保留用户核心亮点"的质量原则。</span></li>
+    </ul>
+
+    <div class="danger"><b>对 Resume Map 的意义：</b>这份 PDF 是飞职质量问题的铁证。它证明"免费 AI 简历工具"赛道存在巨大的"质量真空"——用户拿到的不是"更好的简历"，而是"更长的垃圾"。我们的机会在于：<b>用有纪律的评估引擎（控篇幅、不编造、量化优先）做出它做不出的东西</b>。面试时拿出这份对比："我亲自用过竞品，这是它的输出 vs 这是我的设计原则"——比任何理论分析都有说服力。</div>
+  </div>
+
   <!-- 3. 能力拆解对比 -->
   <div class="card">
     <h2>三、能力拆解对比</h2>
@@ -251,7 +292,7 @@
   <div class="card">
     <h2>七、拆解方法与数据来源</h2>
     <ul class="kv">
-      <li><span class="k">信息来源</span><span>小析智能 xiaoxizn.com、飞职 AI 简历 jianliai.com 官网首页（2026-07-15 抓取）；飞职含拆解人<b>本人实测</b>一手体验（见二·附）。</span></li>
+      <li><span class="k">信息来源</span><span>小析智能 xiaoxizn.com、飞职 AI 简历 jianliai.com 官网首页（2026-07-15 抓取）；飞职含拆解人<b>本人实测</b>一手体验（见二·附），含<b>优化输出 PDF 原件逐行分析</b>（见二·附续）。</span></li>
       <li><span class="k">分析框架</span><span>竞争格局总览 → 单家速览 → 能力拆解对比 → 错位定位图 → 启示 → 风险 → 方法。</span></li>
       <li><span class="k">待补充</span><span>申请两家试用实测；抓取子页补全能力细节；访谈求职者验证"评估诊断"真实需求与付费意愿。</span></li>
       <li><span class="k">声明</span><span>作品集 / 产品练习，所有官方数字均标注为"宣传口径，未独立验证"。</span></li>
