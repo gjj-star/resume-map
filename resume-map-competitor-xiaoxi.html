@@ -221,6 +221,24 @@
     <div class="insight">读图：小析强在"解析 + 匹配"（B 端），飞职强在"生成"（C 端写），Resume Map 强在"评估 + 教练"（C 端诊）。<b>评估 / 诊断 / 补强是两家竞品共同不做的空位。</b></div>
   </div>
 
+  <!-- 3b. 技术底座对比 -->
+  <div class="card">
+    <h2>三·补、技术底座对比（模型选型）</h2>
+    <p style="font-size:13.5px;color:var(--sub);margin:0 0 8px">两家竞品均未在首页明示模型厂牌，但技术路径可从官网子页、FAQ 与产品行为推断。这一节直接回答"它们接入的是什么模型"。</p>
+    <table>
+      <thead><tr><th style="width:130px">对比项</th><th class="rival">小析智能</th><th class="rival2">飞职 AI 简历</th><th class="us">Resume Map（规划）</th></tr></thead>
+      <tbody>
+        <tr><td>模型路线</td><td class="rival">自研深度学习 / NLP（判别式）</td><td class="rival2">外部大语言模型（厂牌未公开）</td><td class="us">外部大语言模型（国产优先）</td></tr>
+        <tr><td>是否接外部 LLM</td><td class="rival">否（自训解析引擎）</td><td class="rival2">是（厂牌未披露）</td><td class="us">是（DeepSeek / 通义千问）</td></tr>
+        <tr><td>技术底座线索</td><td class="rival">TensorFlow 痕迹、阿里云托管、语义深度学习 + 多级融合算法</td><td class="rival2">/score 页明示"大语言模型 + 资深 HR 标准"；生成配知识图谱</td><td class="us">轻后端代理 + 结构化 JSON 输出（PRD 已设计）</td></tr>
+        <tr><td>底层算力 / 云</td><td class="rival">阿里云</td><td class="rival2">未披露</td><td class="us">待定（优先国产云合规）</td></tr>
+        <tr><td>模型透明度</td><td class="rival">不谈 LLM，强调自研</td><td class="rival2">隐瞒厂牌</td><td class="us">规划明示"基于 XX 模型 + 评估引擎"</td></tr>
+      </tbody>
+    </table>
+    <div class="insight">读图：小析走"自研重资产解析"（B 端逻辑），飞职走"外部 LLM 黑盒生成"（厂牌藏住控成本）。<b>两者都不做"用 LLM 当教练做诊断"</b>——这正是我们 V1 选国产 LLM（DeepSeek / 千问）当教练、而非当解析器 / 生成器的差异化落点。且我们反其道行之，把"基于什么模型"做进产品透明披露，反而成信任卖点。</div>
+    <div class="note">推断边界：小析的 TensorFlow / 阿里云、飞职的"大语言模型"均来自其官网子页 / FAQ 公开表述；飞职具体厂牌为拆解人基于"国产免费 C 端工具"常态的推断，非其官方披露，已在正文标注"未公开"。</div>
+  </div>
+
   <!-- 4. 定位图 -->
   <div class="card">
     <h2>四、错位竞争定位图</h2>
