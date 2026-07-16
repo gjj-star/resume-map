@@ -145,9 +145,15 @@ function handleAnalyze(req, res) {
     if (!ROLE_LIB[role]) return send(res, 400, { error: '未知岗位：' + role });
 
     const apiKey = parsed.apiKey || process.env.RM_API_KEY;
+    const forceEngine = parsed.forceEngine; // 'rule' | 'llm' | 省略按默认
     try {
       if (MOCK) { logReq(role, 'mock', ''); return send(res, 200, mockResponse(role)); }
-      if (!apiKey) { logReq(role, 'rule', '无 API Key，已降级规则引擎'); return send(res, 200, Object.assign(analyze(text, role), { note: '无 API Key，已降级规则引擎' })); }
+      // 强制规则引擎（对比用，绕过内置 key，保证走纯关键词兜底）
+      if (forceEngine === 'rule') {
+        logReq(role, 'rule', '强制规则引擎(对比)');
+        return send(res, 200, Object.assign(analyze(text, role), { engine: 'rule', note: '已按请求强制使用规则引擎（对比用，无 AI）' }));
+      }
+      if (!apiKey) { logReq(role, 'rule', '无 API Key，已降级规则引擎'); return send(res, 200, Object.assign(analyze(text, role), { engine: 'rule', note: '无 API Key，已降级规则引擎' })); }
       const raw = await callLLM(apiKey, text, role);
       try { const out = mapLLM(raw, role); logReq(role, 'llm', ''); return send(res, 200, out); }
       catch (mapErr) { logReq(role, 'rule', 'LLM 输出校验失败，已降级规则引擎'); return send(res, 200, Object.assign(analyze(text, role), { note: 'LLM 输出校验失败，已降级规则引擎' })); }

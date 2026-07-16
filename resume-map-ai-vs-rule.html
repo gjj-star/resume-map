@@ -1,0 +1,117 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resume Map · AI vs 规则引擎 同简历对比</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f5f6f8;color:#1f2329;line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:24px;margin:0 0 6px}
+.sub{color:#6b7280;font-size:14px;margin-bottom:24px}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.card{background:#fff;border:1px solid #e6e8eb;border-radius:14px;padding:20px}
+.card .t{font-size:13px;color:#6b7280}
+.card .n{font-size:46px;font-weight:700;line-height:1.1}
+.card.ai .n{color:#2e6bff}
+.card.rg .n{color:#d9504e}
+.card .d{font-size:12px;color:#9aa0a6;margin-top:4px}
+section{background:#fff;border:1px solid #e6e8eb;border-radius:14px;padding:20px 22px;margin-bottom:22px}
+section h2{font-size:17px;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+.tag{font-size:11px;padding:2px 8px;border-radius:20px;background:#eef2ff;color:#2e6bff}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;vertical-align:top;padding:12px 10px;border-bottom:1px solid #f0f1f3;font-size:13px}
+th{font-size:12px;color:#6b7280;font-weight:600}
+td.k{font-weight:600;width:140px;color:#374151}
+td.ai{width:42%}
+td.rg{width:42%}
+.sc{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.bar{flex:1;height:8px;background:#eef0f2;border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%}
+.sc b{font-size:14px;min-width:28px;text-align:right}
+.cm{color:#374151;margin:2px 0}
+.ev{color:#2e6bff;font-size:12px;background:#f3f7ff;border-radius:8px;padding:4px 8px;margin-top:4px}
+.rk{border-left:3px solid #e6e8eb;padding:8px 12px;margin-bottom:10px;background:#fafbfc;border-radius:0 8px 8px 0}
+.rk.lo{border-color:#d9504e}.rk.mid{border-color:#e8a33d}
+.rf{color:#374151;font-size:13px;margin-top:3px}
+.pill{font-size:11px;padding:1px 8px;border-radius:20px;color:#fff;margin-right:6px}
+.pill.lo{background:#d9504e}.pill.mid{background:#e8a33d}.pill.hi{background:#2e9e5b}
+.pill.p0{background:#d9504e}.pill.p1{background:#e8a33d}.pill.p2{background:#5b8def}
+.pl{border:1px solid #eef0f2;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.muted{color:#9aa0a6;font-size:13px}
+.note{background:#fff8e6;border:1px solid #ffe2a8;border-radius:10px;padding:14px 16px;font-size:14px;color:#7a5b00}
+.note b{color:#a35c00}
+details{margin-top:6px}
+summary{cursor:pointer;color:#2e6bff;font-size:13px}
+pre{white-space:pre-wrap;background:#f7f8fa;border-radius:10px;padding:14px;font-size:12px;color:#374151;max-height:240px;overflow:auto}
+.cmp2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cmp2>div{background:#fafbfc;border:1px solid #eef0f2;border-radius:10px;padding:14px}
+.cmp2 h3{margin:0 0 10px;font-size:14px}
+.cmp2 h3.a{color:#2e6bff}.cmp2 h3.b{color:#d9504e}
+</style></head><body><div class="wrap">
+<h1>Resume Map · AI 与规则引擎 同简历对比</h1>
+<div class="sub">同一份简历，分别走「真 LLM（DeepSeek）」与「纯规则引擎（关键词兜底）」，结果并排呈现。</div>
+
+<div class="hero">
+  <div class="card ai"><div class="t">真 LLM 评估 · 整体匹配度</div><div class="n">42</div><div class="d">引用证据、识别风险、判断保守真实</div></div>
+  <div class="card rg"><div class="t">规则引擎评估 · 整体匹配度</div><div class="n">75</div><div class="d">关键词命中即高分，虚高且泛化</div></div>
+</div>
+
+<section><h2>逐维度对比 <span class="tag">同一份简历</span></h2>
+<table>
+<thead><tr><th>能力维度</th><th>真 LLM（引用证据）</th><th>规则引擎（关键词命中）</th></tr></thead>
+<tbody><tr>
+      <td class="k">数据分析能力</td>
+      <td class="ai"><div class="sc"><div class="bar"><i style="width:60%;background:#e8a33d"></i></div><b style="color:#e8a33d">60</b></div><div class="cm">有建模经验，AUC指标具体，但缺乏数据量、特征工程、业务影响等细节，且仅一个项目，深度不足。</div><div class="ev">证据：用 Python 建立用户复购预测模型，AUC 达到 0.8959，帮助提升业绩。</div></td>
+      <td class="rg"><div class="sc"><div class="bar"><i style="width:100%;background:#2e9e5b"></i></div><b style="color:#2e9e5b">100</b></div><div class="cm">命中证据：数据、python、sql、auc、复购、预测</div><div class="ev">命中：数据；python；sql；auc；复购；预测</div></td>
+    </tr><tr>
+      <td class="k">AI工具与落地</td>
+      <td class="ai"><div class="sc"><div class="bar"><i style="width:40%;background:#d9504e"></i></div><b style="color:#d9504e">40</b></div><div class="cm">仅提及使用ChatGPT、Claude，但无具体落地成果，RAG、Prompt仅停留在了解层面，缺乏项目证据。</div><div class="ev">证据：技能：ChatGPT、Claude；自我评价：熟悉 AI 工具，了解 RAG、Prompt。</div></td>
+      <td class="rg"><div class="sc"><div class="bar"><i style="width:95%;background:#2e9e5b"></i></div><b style="color:#2e9e5b">95</b></div><div class="cm">命中证据：ai、prompt、rag、claude、gpt</div><div class="ev">命中：ai；prompt；rag；claude；gpt</div></td>
+    </tr><tr>
+      <td class="k">产品基本功</td>
+      <td class="ai"><div class="sc"><div class="bar"><i style="width:30%;background:#d9504e"></i></div><b style="color:#d9504e">30</b></div><div class="cm">未提及PRD、需求分析、原型设计、竞品分析等核心产出，仅有独立开发Wiki站但偏向开发而非产品设计。</div><div class="ev">证据：独立开发 Vue3 游戏中文 Wiki 站，负责前端与数据。</div></td>
+      <td class="rg"><div class="sc"><div class="bar"><i style="width:65%;background:#e8a33d"></i></div><b style="color:#e8a33d">65</b></div><div class="cm">命中证据：产品、墨刀、axure</div><div class="ev">命中：产品；墨刀；axure</div></td>
+    </tr><tr>
+      <td class="k">技术概念理解</td>
+      <td class="ai"><div class="sc"><div class="bar"><i style="width:50%;background:#e8a33d"></i></div><b style="color:#e8a33d">50</b></div><div class="cm">有Python、SQL、Vue3开发经验，但未涉及API、部署、成本等AI产品相关技术概念。</div><div class="ev">证据：技能：Python、SQL、Excel、Axure、墨刀；项目：Vue3、85KB卡牌数据。</div></td>
+      <td class="rg"><div class="sc"><div class="bar"><i style="width:65%;background:#e8a33d"></i></div><b style="color:#e8a33d">65</b></div><div class="cm">命中证据：前端、vue、开发</div><div class="ev">命中：前端；vue；开发</div></td>
+    </tr><tr>
+      <td class="k">业务理解</td>
+      <td class="ai"><div class="sc"><div class="bar"><i style="width:20%;background:#d9504e"></i></div><b style="color:#d9504e">20</b></div><div class="cm">项目描述缺乏行业背景、用户需求、商业模式分析，校园活动与AI产品无关。</div><div class="ev">证据：校园活动：组织过多次社团活动，提升了团队协作能力。</div></td>
+      <td class="rg"><div class="sc"><div class="bar"><i style="width:35%;background:#d9504e"></i></div><b style="color:#d9504e">35</b></div><div class="cm">命中证据：用户</div><div class="ev">命中：用户</div></td>
+    </tr><tr>
+      <td class="k">表达与诚实度</td>
+      <td class="ai"><div class="sc"><div class="bar"><i style="width:70%;background:#2e9e5b"></i></div><b style="color:#2e9e5b">70</b></div><div class="cm">大部分表述有具体数据或事实，但&#x27;帮助提升业绩&#x27;缺乏量化口径，&#x27;熟悉AI工具&#x27;无落地支撑。</div><div class="ev">证据：AUC 达到 0.8959，帮助提升业绩；熟悉 AI 工具，了解 RAG、Prompt。</div></td>
+      <td class="rg"><div class="sc"><div class="bar"><i style="width:84%;background:#2e9e5b"></i></div><b style="color:#2e9e5b">84</b></div><div class="cm">识别到 1 个风险点，诚实度评分 84</div><div class="ev">命中：（无）</div></td>
+    </tr></tbody>
+</table></section>
+
+<section><h2>风险点识别对比</h2>
+<div class="cmp2">
+  <div><h3 class="a">真 LLM · 4 个风险点（带依据）</h3><div class="rk lo"><span class="pill lo">高</span> AI工具落地证据缺失<div class="rf">建议：补充至少一个使用AI工具（如ChatGPT/Claude）完成的具体项目，说明输入、输出、效果。</div><div class="ev">依据：技能：ChatGPT、Claude；自我评价：熟悉 AI 工具，了解 RAG、Prompt。</div></div><div class="rk lo"><span class="pill lo">高</span> 产品基本功薄弱<div class="rf">建议：补充PRD、需求文档、原型图、竞品分析等产品经理核心产出案例。</div><div class="ev">依据：未提及任何产品文档或原型设计项目。</div></div><div class="rk lo"><span class="pill lo">中</span> 业绩数据无口径<div class="rf">建议：明确&#x27;帮助提升业绩&#x27;的具体指标（如转化率提升X%），并说明数据来源和计算方式。</div><div class="ev">依据：AUC 达到 0.8959，帮助提升业绩。</div></div><div class="rk lo"><span class="pill lo">中</span> 项目角色与成果不成比例<div class="rf">建议：说明在复购预测模型中的具体角色（如数据清洗、特征工程、模型调优），避免模糊表述。</div><div class="ev">依据：用 Python 建立用户复购预测模型。</div></div></div>
+  <div><h3 class="b">规则引擎 · 1 个风险点（泛化）</h3><div class="rk mid"><span class="pill mid">中</span> 精确数字缺口径<div class="rf">建议：简历含精确数字/比率（如 AUC、百分比、倍数），面试必被问&quot;怎么算的&quot;。为每个数字准备一句计算口径说明。</div></div></div>
+</div></section>
+
+<section><h2>补强计划对比</h2>
+<div class="cmp2">
+  <div><h3 class="a">真 LLM · 具体到动作与产出</h3><div class="pl"><span class="pill p0">P0</span><b>AI工具与落地</b>：用ChatGPT/Claude完成一个端到端项目，如基于RAG的问答机器人，并记录过程与效果。<div class="ev">产出：项目文档：需求分析、技术选型、实现步骤、效果评估（如准确率、用户反馈）。</div></div><div class="pl"><span class="pill p0">P0</span><b>产品基本功</b>：针对复购预测模型或Wiki站，撰写一份PRD，包含背景、用户故事、功能列表、原型图。<div class="ev">产出：PRD文档+Axure原型链接。</div></div><div class="pl"><span class="pill p1">P1</span><b>业务理解</b>：选择一款AI产品（如ChatGPT），撰写一份竞品分析报告，包含市场定位、用户画像、商业模式。<div class="ev">产出：竞品分析报告（1000字以上）。</div></div><div class="pl"><span class="pill p2">P2</span><b>数据分析能力</b>：在复购预测项目中补充数据量、特征数量、AUC提升的业务含义，并增加一个AB测试案例。<div class="ev">产出：更新项目描述，增加AB测试方案与结果。</div></div></div>
+  <div><h3 class="b">规则引擎 · 模板化套话</h3><div class="pl"><span class="pill p0">P0</span><b>业务理解</b>：研究目标行业的产业链与商业模式<div class="ev">产出：行业分析笔记</div></div><div class="pl"><span class="pill p1">P1</span><b>产品基本功</b>：完整练写一份 PRD（需求背景→用户故事→功能列表→优先级）<div class="ev">产出：可讲可展示的 PRD</div></div><div class="pl"><span class="pill p1">P1</span><b>技术概念理解</b>：搞懂 API / 部署 / 成本概念，能和技术同事对话<div class="ev">产出：技术概念笔记</div></div></div>
+</div></section>
+
+<section><h2>结论：为什么这个产品非用 AI 不可</h2>
+<div class="note">
+规则引擎把「数据分析能力」直接打到 <b>100</b> 分，仅仅因为简历出现了 python / sql 关键词；整体给出 <b>75</b> 分的虚假安全感。
+而真 LLM 给出 <b>42</b> 分，并点出「AUC 0.8959 缺乏数据量与业务口径」「RAG/Prompt 仅停留在了解层、无落地」「产品基本功薄弱、缺 PRD/原型」等真实短板。<br><br>
+<b>差距本质</b>：规则引擎做的是「有没有提到」的关键词匹配；LLM 做的是「做得怎么样、差在哪、怎么补」的专业判断。前者给分数，后者给成长路径——这正是 Resume Map 作为「能力教练」而非「打分器」的产品价值。
+</div></section>
+
+<details><summary>查看用于对比的简历原文（脱敏样例）</summary><pre>候选人
+求职意向：AI 产品经理
+电话：138xxxx 邮箱：gjj@example.com
+教育背景：某双一流高校 某专业 2023-2027（双一流）
+技能：Python、SQL、Excel、Axure、墨刀、ChatGPT、Claude
+项目经历：
+1. 复购预测模型：用 Python 建立用户复购预测模型，AUC 达到 0.8959，帮助提升业绩。
+2. 某游戏 Wiki：独立开发 Vue3 游戏中文 Wiki 站，负责前端与数据，共 7 个页面、85KB 卡牌数据。
+3. 校园活动：组织过多次社团活动，提升了团队协作能力，获得同学好评。
+自我评价：熟悉 AI 工具，了解 RAG、Prompt，热爱产品，学习能力强，能快速上手新工具。</pre></details>
+</div></body></html>
