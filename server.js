@@ -76,9 +76,12 @@ function callLLM(apiKey, text, roleKey) {
       }
     };
     const req = https.request(options, res => {
-      let body = '';
-      res.on('data', c => body += c);
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
       res.on('end', () => {
+        // 用 Buffer 累积后统一按 UTF-8 解码，避免分片切断多字节中文字符产生乱码（经典坑）
+        const body = Buffer.concat(chunks).toString('utf-8');
+        if (body.includes('\uFFFD')) console.warn('[Resume Map][WARN] LLM 原始响应含替换符，疑似分片截断乱码（已尝试完整解码仍损坏）');
         if (res.statusCode !== 200) return reject(new Error('LLM HTTP ' + res.statusCode + ' ' + body.slice(0, 200)));
         let resp;
         try { resp = JSON.parse(body); } catch (e) { return reject(new Error('LLM 响应非 JSON')); }
