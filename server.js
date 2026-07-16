@@ -29,17 +29,17 @@ function buildPrompt(text, roleKey) {
   const lib = ROLE_LIB[roleKey];
   const dimsLine = lib.dims.map(d => `- ${d.key}（权重 ${d.weight}）：${d.desc || ''}`).join('\n');
   const schema = {
-    dims: [{ key: '维度名', score: 80, level: '强', comment: '基于简历具体证据的点评' }],
-    risks: [{ level: '高', title: '风险点', fix: '修改建议' }],
+    dims: [{ key: '维度名', score: 80, level: '强', comment: '基于简历具体证据的点评', evidence: '引用简历中的具体事实，可短句' }],
+    risks: [{ level: '高', title: '风险点', fix: '修改建议', evidence: '触发该风险点的简历原话或缺失点' }],
     match: 75,
     plan: [{ priority: 'P0', dim: '维度名', action: '补强动作', out: '预期产出' }]
   };
   const system = '你是一名资深 HR 与 AI 产品经理双背景的简历能力评估专家。' +
     '任务：根据用户提供的目标岗位能力维度定义，评估一份简历，输出严格的 JSON。' +
-    '规则：1) 每个维度给 0-100 的 score、等级 level（强/中/弱）、一句基于简历具体证据的点评 comment（必须引用简历中的真实事实，绝不编造或夸大）；' +
-    '2) 识别面试风险点 risks（如强词无证据、精确数字无口径、核心维度薄弱），每条给 level（高/中/低）、title、fix 修改建议；' +
+    '规则：1) 每个维度给 0-100 的 score、等级 level（强/中/弱）、基于简历具体证据的点评 comment 与 evidence（evidence 必须引用简历中的真实事实原文或高度概括，comment 是基于 evidence 的专业判断，绝不编造或夸大）；' +
+    '2) 识别面试风险点 risks（如强词无证据、精确数字无口径、核心维度薄弱、项目角色与成果不成比例），每条给 level（高/中/低）、title、fix 修改建议、evidence 触发依据；' +
     '3) 基于维度加权计算整体匹配度 match（0-100 整数）；' +
-    '4) 给出补强计划 plan（按优先级 P0/P1/P2，针对薄弱维度，含 action 与预期产出 out）。' +
+    '4) 给出补强计划 plan（按优先级 P0/P1/P2，针对薄弱维度，含 action 与预期产出 out，action 要具体可执行）。' +
     '只输出 JSON，不要任何额外文字。';
   const user = `目标岗位：${lib.name}\n能力维度（含权重）：\n${dimsLine}\n\n简历文本：\n${text}\n\n请严格按以下 JSON 结构输出：\n${JSON.stringify(schema)}`;
   return [{ role: 'system', content: system }, { role: 'user', content: user }];
@@ -96,11 +96,11 @@ function mapLLM(raw, roleKey) {
   const dims = raw.dims.map(d => ({
     key: String(d.key), weight: weightOf(d.key),
     score: clamp(d.score, 0, 100),
-    matched: [],
+    matched: Array.isArray(d.evidence) ? d.evidence.map(String) : (d.evidence ? [String(d.evidence)] : []),
     comment: String(d.comment || (d.level ? '等级：' + d.level : '无点评'))
   }));
   const risks = Array.isArray(raw.risks) ? raw.risks.map(r => ({
-    level: String(r.level || '中'), title: String(r.title || '风险点'), fix: String(r.fix || '')
+    level: String(r.level || '中'), title: String(r.title || '风险点'), fix: String(r.fix || ''), evidence: String(r.evidence || '')
   })) : [];
   const plan = Array.isArray(raw.plan) ? raw.plan.map(p => ({
     priority: String(p.priority || 'P1'), dim: String(p.dim || ''), action: String(p.action || ''), out: String(p.out || '')

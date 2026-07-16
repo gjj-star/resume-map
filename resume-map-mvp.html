@@ -48,6 +48,9 @@
   .bar>i{display:block;height:100%;border-radius:8px}
   .dim-score{width:42px;text-align:right;font-weight:700;font-size:13px}
   .dim-comment{font-size:12px;color:var(--sub);margin:-4px 0 8px 140px}
+  .dim-evidence{font-size:12px;color:var(--sub);margin:-4px 0 8px 140px}
+  .evidence-chip{display:inline-block;background:var(--brand-soft);color:var(--brand);padding:2px 8px;border-radius:10px;margin:2px 4px 2px 0;font-size:11px}
+  .risk .re{font-size:12px;color:#33404f;margin-bottom:4px}
   .pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:700}
   .p0{background:var(--danger-soft);color:var(--danger)}
   .p1{background:var(--warn-soft);color:var(--warn)}
@@ -107,9 +110,15 @@
           <option value="fe">前端开发</option>
         </select>
         <div class="hint">不同岗位加载不同能力维度库与评分权重。</div>
-        <label style="margin-top:14px">自带 API Key（可选）</label>
-        <input type="password" id="apiKeyInput" placeholder="留空则用内置兜底 / 填 DeepSeek Key 启用真模型">
-        <div class="hint">填你自己的 DeepSeek / 兼容 Key，走你账户额度；不填则降级规则引擎。密钥仅发往后端，不进前端代码。</div>
+        <label style="margin-top:14px">AI 模型</label>
+        <div style="margin-top:6px"><span class="pill" style="background:#e6f6ee;color:#1f9d6b">内置模型</span> <span style="color:var(--sub);font-size:12px">打开即用</span></div>
+        <div class="hint">默认使用服务端内置模型。如服务端未配置内置 Key，会自动降级规则引擎并提示。高级用户可展开下方选项使用自己的 Key。</div>
+        <details style="margin-top:10px">
+          <summary style="color:var(--sub);cursor:pointer;font-size:13px">高级设置：使用自己的 API Key</summary>
+          <label style="margin-top:10px;display:block">自带 API Key</label>
+          <input type="password" id="apiKeyInput" placeholder="填入 DeepSeek / 兼容 Key，走你账户额度">
+          <div class="hint">密钥仅发往后端，不进前端代码。留空则使用内置模型。</div>
+        </details>
       </div>
     </div>
     <div class="btn-row">
@@ -297,6 +306,8 @@ function drawRadar(dims){
 function colorOf(s){ return s<45?'#d9453d':(s<66?'#e8920b':'#1f9d6b'); }
 
 /* ============ 渲染 ============ */
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 function render(res){
   drawRadar(res.dims);
   const mb=document.getElementById('matchBadge');
@@ -305,20 +316,22 @@ function render(res){
   mb.style.color = res.match<50?'#d9453d':(res.match<70?'#e8920b':'#1f9d6b');
 
   document.getElementById('dimList').innerHTML = res.dims.map(d=>(
-    '<div class="dim-row"><div class="dim-name">'+d.key+'</div>'+
+    '<div class="dim-row"><div class="dim-name">'+escapeHtml(d.key)+'</div>'+
     '<div class="bar"><i style="width:'+d.score+'%;background:'+colorOf(d.score)+'"></i></div>'+
     '<div class="dim-score" style="color:'+colorOf(d.score)+'">'+d.score+'</div></div>'+
-    '<div class="dim-comment">'+d.comment+'</div>'
+    '<div class="dim-comment">'+escapeHtml(d.comment)+'</div>'+
+    (d.matched && d.matched.length ? '<div class="dim-evidence">证据：'+d.matched.map(x=>'<span class="evidence-chip">'+escapeHtml(x)+'</span>').join('')+'</div>' : '')
   )).join('');
 
   document.getElementById('riskList').innerHTML = res.risks.length ? res.risks.map(r=>(
-    '<div class="risk lv'+r.level+'"><div class="rt"><span class="pill lv'+r.level+'">'+r.level+'</span> '+r.title+'</div>'+
-    '<div class="rf">'+r.fix+'</div></div>'
+    '<div class="risk lv'+r.level+'"><div class="rt"><span class="pill lv'+r.level+'">'+r.level+'</span> '+escapeHtml(r.title)+'</div>'+
+    (r.evidence ? '<div class="re">依据：'+escapeHtml(r.evidence)+'</div>' : '')+
+    '<div class="rf">'+escapeHtml(r.fix)+'</div></div>'
   )).join('') : '<div class="note">未识别到明显风险点。仍建议人工复核表述准确性。</div>';
 
   document.getElementById('planList').innerHTML = (res.plan && res.plan.length ? res.plan : buildPlan(res.dims, res.lib)).map(p=>(
     '<div class="plan"><span class="pill '+p.priority.toLowerCase()+'">'+p.priority+'</span>'+
-    '<div><div class="pa"><b>'+p.dim+'</b>：'+p.action+'</div><div class="po">产出：'+p.out+'</div></div></div>'
+    '<div><div class="pa"><b>'+escapeHtml(p.dim)+'</b>：'+escapeHtml(p.action)+'</div><div class="po">产出：'+escapeHtml(p.out)+'</div></div></div>'
   )).join('');
 
   document.getElementById('result').style.display='block';
@@ -332,12 +345,12 @@ document.getElementById('genBtn').addEventListener('click', async ()=>{
   const text=document.getElementById('resumeText').value.trim();
   if(!text){ err.textContent='请先粘贴简历文本或上传文件。'; err.style.display='block'; return; }
   const role=document.getElementById('roleSelect').value;
-  const apiKey=document.getElementById('apiKeyInput').value.trim();
+  const apiKey=document.getElementById('apiKeyInput').value.trim() || undefined; // 空则走后端内置模型
   btn.disabled=true; const oldTxt=btn.textContent; btn.textContent='生成中…';
   try{
     const r=await fetch('/api/analyze',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text, role, apiKey: apiKey||undefined})
+      body:JSON.stringify({text, role, apiKey})
     });
     if(r.ok){
       const data=await r.json();
