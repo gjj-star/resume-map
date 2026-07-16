@@ -7,6 +7,16 @@ const fs = require('fs');
 const path = require('path');
 const { analyze, ROLE_LIB } = require('./ruleEngine');
 
+// 本地开发时自动加载 .env（不进 git，已 gitignore），避免手动 export；生产环境以真实环境变量为准
+const envPath = path.join(__dirname, '.env');
+try {
+  const envText = fs.readFileSync(envPath, 'utf8');
+  envText.split(/\r?\n/).forEach(line => {
+    const m = line.match(/^\s*([\w.]+)\s*=\s*(.*?)\s*$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+  });
+} catch (e) { /* .env 不存在或不可读，忽略 */ }
+
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.RM_BASE_URL || 'https://api.deepseek.com/v1/chat/completions';
 const MODEL = process.env.RM_MODEL || 'deepseek-chat';
