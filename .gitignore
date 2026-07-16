@@ -17,3 +17,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# ===== 运行时日志（含请求/降级记录，勿入库） =====
+server.log

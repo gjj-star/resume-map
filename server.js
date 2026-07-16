@@ -17,6 +17,13 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 
 function clamp(n, lo, hi) { n = Number(n); if (!isFinite(n)) return lo; return Math.max(lo, Math.min(hi, Math.round(n))); }
 
+// 请求日志：只记角色/引擎/降级原因，绝不记 key 与简历全文
+const LOG_FILE = path.join(ROOT, 'server.log');
+function logReq(role, engine, note) {
+  const line = `[${new Date().toISOString()}] role=${role} engine=${engine}${note ? ' note=' + note : ''}\n`;
+  try { fs.appendFileSync(LOG_FILE, line); } catch (e) {}
+}
+
 /* ---------- LLM 调用 ---------- */
 function buildPrompt(text, roleKey) {
   const lib = ROLE_LIB[roleKey];
@@ -63,7 +70,15 @@ function callLLM(apiKey, text, roleKey) {
       res.on('data', c => body += c);
       res.on('end', () => {
         if (res.statusCode !== 200) return reject(new Error('LLM HTTP ' + res.statusCode + ' ' + body.slice(0, 200)));
-        try { resolve(JSON.parse(body)); } catch (e) { reject(new Error('LLM 响应非 JSON')); }
+        let resp;
+        try { resp = JSON.parse(body); } catch (e) { return reject(new Error('LLM 响应非 JSON')); }
+        // 剥 OpenAI 兼容外壳：真正业务 JSON 在 choices[0].message.content（字符串，需再 parse）
+        const content = resp && resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content;
+        if (!content) return reject(new Error('LLM 响应缺 choices/content：' + JSON.stringify(resp).slice(0, 200)));
+        let inner = String(content).trim();
+        // 兜底：个别模型会用 ```json ... ``` 包裹
+        if (inner.startsWith('```')) inner = inner.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+        try { resolve(JSON.parse(inner)); } catch (e) { reject(new Error('LLM content 非 JSON：' + inner.slice(0, 200))); }
       });
     });
     req.on('error', e => reject(e));
@@ -121,13 +136,14 @@ function handleAnalyze(req, res) {
 
     const apiKey = parsed.apiKey || process.env.RM_API_KEY;
     try {
-      if (MOCK) return send(res, 200, mockResponse(role));
-      if (!apiKey) return send(res, 200, Object.assign(analyze(text, role), { note: '无 API Key，已降级规则引擎' }));
+      if (MOCK) { logReq(role, 'mock', ''); return send(res, 200, mockResponse(role)); }
+      if (!apiKey) { logReq(role, 'rule', '无 API Key，已降级规则引擎'); return send(res, 200, Object.assign(analyze(text, role), { note: '无 API Key，已降级规则引擎' })); }
       const raw = await callLLM(apiKey, text, role);
-      try { return send(res, 200, mapLLM(raw, role)); }
-      catch (mapErr) { return send(res, 200, Object.assign(analyze(text, role), { note: 'LLM 输出校验失败，已降级规则引擎' })); }
+      try { const out = mapLLM(raw, role); logReq(role, 'llm', ''); return send(res, 200, out); }
+      catch (mapErr) { logReq(role, 'rule', 'LLM 输出校验失败，已降级规则引擎'); return send(res, 200, Object.assign(analyze(text, role), { note: 'LLM 输出校验失败，已降级规则引擎' })); }
     } catch (e) {
       // 模型调用失败 → 规则引擎兜底
+      logReq(role, 'rule', 'LLM 调用失败，已降级规则引擎：' + e.message);
       return send(res, 200, Object.assign(analyze(text, role), { note: 'LLM 调用失败，已降级规则引擎：' + e.message }));
     }
   });
