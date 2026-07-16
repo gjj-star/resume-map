@@ -118,6 +118,26 @@ function mapLLM(raw, roleKey) {
   const plan = Array.isArray(raw.plan) ? raw.plan.map(p => ({
     priority: String(p.priority || 'P1'), dim: String(p.dim || ''), action: String(p.action || ''), out: String(p.out || '')
   })) : [];
+  // ── 诚实度后校验：若 LLM 自己检测到 AI 生成 / 疑似生成类风险，
+  //    却仍给了高分 → 强制扣分，防止"判作弊但给满分"的矛盾 ──
+  const AI_GEN_PAT = /(?:AI\s*生成|生成内容|疑似.*生成|GPT|ChatGPT|AI.*撰写|LLM.*生成|机器.*生成|由\s*AI|AI.*补全|可能为.*生成)/i;
+  const hasAIRisk = risks.some(r => AI_GEN_PAT.test(r.title) || AI_GEN_PAT.test(r.fix));
+  if (hasAIRisk) {
+    // 1) 表达与诚实度维度强制降分
+    const honestyDim = dims.find(d => d.key === '表达与诚实度');
+    if (honestyDim && honestyDim.score > 55) {
+      honestyDim.score = Math.max(40, honestyDim.score - 45);
+      honestyDim.comment = '[后校验] 检测到 AI 生成风险，已自动降分：' + honestyDim.comment;
+    }
+    // 2) 总分封顶
+    const rawMatch = clamp(raw.match, 0, 100);
+    const cappedMatch = Math.min(rawMatch, 88);
+    if (cappedMatch < rawMatch) {
+      dims.push({ key: '[校验]AI生成降权', weight: 0, score: 0, matched: [], comment: '因检测到 AI/生成类风险，总分已从 ' + rawMatch + ' 降至 ' + cappedMatch });
+    }
+    return { dims, risks, match: cappedMatch, plan, engine: 'llm' };
+  }
+
   return { dims, risks, match: clamp(raw.match, 0, 100), plan, engine: 'llm' };
 }
 
