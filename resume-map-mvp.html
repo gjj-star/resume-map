@@ -78,9 +78,9 @@
 <div class="top">
   <div>
     <h1> Resume Map · 简历能力地图</h1>
-    <div class="desc">上传简历 → 选择目标岗位 → 一键生成能力雷达图 / 风险点 / 补强路线（V0 规则引擎 · 零 API 依赖）</div>
+    <div class="desc">上传简历 → 选择目标岗位 → 一键生成能力雷达图 / 风险点 / 补强路线（V1 · LLM 智能评估，规则引擎兜底）</div>
   </div>
-  <span class="tag">MVP 原型 · 规则版</span>
+  <span class="tag">MVP 原型 · V1 LLM</span>
 </div>
 
 <div class="wrap">
@@ -107,6 +107,9 @@
           <option value="fe">前端开发</option>
         </select>
         <div class="hint">不同岗位加载不同能力维度库与评分权重。</div>
+        <label style="margin-top:14px">自带 API Key（可选）</label>
+        <input type="password" id="apiKeyInput" placeholder="留空则用内置兜底 / 填 DeepSeek Key 启用真模型">
+        <div class="hint">填你自己的 DeepSeek / 兼容 Key，走你账户额度；不填则降级规则引擎。密钥仅发往后端，不进前端代码。</div>
       </div>
     </div>
     <div class="btn-row">
@@ -120,7 +123,7 @@
     <div class="card">
       <h2>② 能力地图报告</h2>
       <div style="margin-bottom:6px">岗位匹配度（加权）：<span class="match-badge" id="matchBadge">—</span>
-        <span class="hint" style="margin-left:8px">规则初评，仅供参考</span></div>
+        <span class="hint" style="margin-left:8px">AI 评估，仅供参考</span></div>
       <div class="grid2">
         <div>
           <svg id="radar" viewBox="0 0 360 350" width="360" height="350"></svg>
@@ -133,7 +136,7 @@
     <div class="card">
       <h2>③ 面试风险点</h2>
       <div id="riskList"></div>
-      <div class="note">风险点由规则识别（强词无证据 / 精确数字无口径 / 核心维度薄弱）。面试前对照准备话术，避免被追问露馅。</div>
+      <div class="note">风险点由 AI 识别（强词无证据 / 精确数字无口径 / 核心维度薄弱）。面试前对照准备话术，避免被追问露馅。</div>
     </div>
 
     <div class="card">
@@ -147,7 +150,7 @@
   </div>
 </div>
 
-<div class="prototype-tag">Prototype · 规则引擎 Mock</div>
+<div class="prototype-tag">V1 · LLM 智能评估</div>
 
 <script>
 /* ============ 岗位能力维度库 ============ */
@@ -313,7 +316,7 @@ function render(res){
     '<div class="rf">'+r.fix+'</div></div>'
   )).join('') : '<div class="note">未识别到明显风险点。仍建议人工复核表述准确性。</div>';
 
-  document.getElementById('planList').innerHTML = buildPlan(res.dims, res.lib).map(p=>(
+  document.getElementById('planList').innerHTML = (res.plan && res.plan.length ? res.plan : buildPlan(res.dims, res.lib)).map(p=>(
     '<div class="plan"><span class="pill '+p.priority.toLowerCase()+'">'+p.priority+'</span>'+
     '<div><div class="pa"><b>'+p.dim+'</b>：'+p.action+'</div><div class="po">产出：'+p.out+'</div></div></div>'
   )).join('');
@@ -323,13 +326,44 @@ function render(res){
 }
 
 /* ============ 交互 ============ */
-document.getElementById('genBtn').addEventListener('click',()=>{
+document.getElementById('genBtn').addEventListener('click', async ()=>{
+  const btn=document.getElementById('genBtn');
   const err=document.getElementById('genErr'); err.style.display='none';
   const text=document.getElementById('resumeText').value.trim();
   if(!text){ err.textContent='请先粘贴简历文本或上传文件。'; err.style.display='block'; return; }
   const role=document.getElementById('roleSelect').value;
-  const res=scoreResume(text, role);
-  render(res);
+  const apiKey=document.getElementById('apiKeyInput').value.trim();
+  btn.disabled=true; const oldTxt=btn.textContent; btn.textContent='生成中…';
+  try{
+    const r=await fetch('/api/analyze',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text, role, apiKey: apiKey||undefined})
+    });
+    if(r.ok){
+      const data=await r.json();
+      if(data && Array.isArray(data.dims) && data.dims.length){
+        render(data);
+        if(data.note){ err.style.color='var(--sub)'; err.textContent='（'+data.note+'）'; err.style.display='block'; }
+        return;
+      }
+    }
+    throw new Error('接口返回异常');
+  }catch(e){
+    // 后端不可用（如直接双击打开 file://）→ 本地规则引擎兜底
+    try{
+      const res=scoreResume(text, role);
+      render(res);
+      err.style.color='var(--sub)';
+      err.textContent='（后端不可用，已用本地规则引擎兜底）';
+      err.style.display='block';
+      return;
+    }catch(e2){
+      err.style.color=''; err.textContent='生成失败：'+(e.message||e);
+      err.style.display='block';
+    }
+  }finally{
+    btn.disabled=false; btn.textContent=oldTxt;
+  }
 });
 
 document.getElementById('sampleBtn').addEventListener('click',()=>{
