@@ -182,6 +182,41 @@ async function runAnalyze(parsed) {
   }
 }
 
+/* ---------- 对比模式（同一份简历，双引擎并跑） ---------- */
+async function runCompare(parsed) {
+  const text = (parsed.text || '').trim();
+  const role = parsed.role || 'ai_pm';
+  if (!text) return { code: 400, obj: { error: '缺少简历文本' } };
+  if (!ROLE_LIB[role]) return { code: 400, obj: { error: '未知岗位：' + role } };
+  const apiKey = parsed.apiKey || process.env.RM_API_KEY;
+
+  // 规则引擎必跑（纯关键词兜底，永远可用，不依赖 Key）
+  const rule = Object.assign(analyze(text, role), { engine: 'rule' });
+
+  // 真 LLM 可选：无 Key / Mock 模式 / 调用失败 → 仅规则结果
+  let llm = null, llmErr = null;
+  if (MOCK) {
+    llm = mockResponse(role);
+  } else if (apiKey) {
+    try { const raw = await callLLM(apiKey, text, role); llm = mapLLM(raw, role); }
+    catch (e) { llmErr = e.message; }
+  }
+
+  const obj = {
+    compare: true,
+    rule,
+    llm,
+    ruleMatch: rule.match,
+    llmMatch: llm ? llm.match : null,
+    llmAvailable: !!llm,
+    note: llmErr ? ('LLM 调用失败，仅展示规则引擎结果：' + llmErr)
+                 : (llm ? '双引擎对比完成（真 LLM vs 规则引擎，同一份简历）'
+                        : '未配置 API Key，仅规则引擎结果可对比')
+  };
+  logReq(role, llm ? 'llm+rule' : 'rule-only', llmErr ? 'compare LLM失败' : 'compare');
+  return { code: 200, obj };
+}
+
 /* ---------- 本地 HTTP 请求处理 ---------- */
 function handleAnalyze(req, res) {
   let body = '';
@@ -190,6 +225,17 @@ function handleAnalyze(req, res) {
     let parsed;
     try { parsed = JSON.parse(body); } catch (e) { return send(res, 400, { error: '请求体非 JSON' }); }
     const r = await runAnalyze(parsed);
+    send(res, r.code, r.obj);
+  });
+}
+
+function handleCompare(req, res) {
+  let body = '';
+  req.on('data', c => { body += c; if (body.length > 1e6) req.destroy(); });
+  req.on('end', async () => {
+    let parsed;
+    try { parsed = JSON.parse(body); } catch (e) { return send(res, 400, { error: '请求体非 JSON' }); }
+    const r = await runCompare(parsed);
     send(res, r.code, r.obj);
   });
 }
@@ -205,7 +251,7 @@ exports.main = async (event, context) => {
     const raw = typeof event.body === 'string' ? event.body : (event.body ? JSON.stringify(event.body) : '{}');
     parsed = JSON.parse(raw);
   } catch (e) { return { statusCode: 400, headers, body: JSON.stringify({ error: '请求体非 JSON' }) }; }
-  const r = await runAnalyze(parsed);
+  const r = parsed.compare ? await runCompare(parsed) : await runAnalyze(parsed);
   return { statusCode: r.code, headers, body: JSON.stringify(r.obj) };
 };
 exports.runAnalyze = runAnalyze;
@@ -244,6 +290,7 @@ function serveStatic(req, res) {
 }
 
 const server = http.createServer((req, res) => {
+  if (req.method === 'POST' && req.url.startsWith('/api/compare')) return handleCompare(req, res);
   if (req.method === 'POST' && req.url.startsWith('/api/analyze')) return handleAnalyze(req, res);
   if (req.method === 'GET' || req.method === 'HEAD') return serveStatic(req, res);
   res.writeHead(405); res.end('Method Not Allowed');

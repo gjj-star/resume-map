@@ -69,6 +69,35 @@
   .legend{font-size:12px;color:var(--sub);text-align:center;margin-top:4px}
   .prototype-tag{position:fixed;bottom:14px;right:16px;background:#fff;border:1px solid var(--line);
     color:var(--sub);font-size:11.5px;padding:5px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);z-index:50}
+  /* 对比模式 */
+  .cmp-toggle{margin-top:6px;margin-bottom:2px}
+  .cmp-hero{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:6px}
+  .cmp-num{background:#fafbfc;border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center}
+  .cmp-num .ct{font-size:12px;color:var(--sub)}
+  .cmp-num .cn{font-size:40px;font-weight:700;line-height:1.1;margin:4px 0}
+  .cmp-num .cd{font-size:11px;color:#9aa0a6}
+  .cmp-num.ai .cn{color:var(--brand)}
+  .cmp-num.rg .cn{color:var(--danger)}
+  .cmp-num.delta .cn{color:var(--warn)}
+  .cmp-table{width:100%;border-collapse:collapse}
+  .cmp-table th,.cmp-table td{text-align:left;vertical-align:top;padding:11px 10px;border-bottom:1px solid #f0f1f3;font-size:13px}
+  .cmp-table th{font-size:12px;color:var(--sub);font-weight:600}
+  .cmp-table td.k{font-weight:600;width:130px;color:#374151}
+  .cmp-table td.ai{width:42%}
+  .cmp-table td.rg{width:42%}
+  .cmp-table .sc{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .cmp-table .sc .bar{flex:1;height:8px;background:#eef0f2;border-radius:6px;overflow:hidden}
+  .cmp-table .sc .bar>i{display:block;height:100%}
+  .cmp-table .sc b{font-size:14px;min-width:28px;text-align:right}
+  .cmp-table .cm{color:#374151;margin:2px 0;font-size:12px}
+  .cmp-table .ev{font-size:12px;color:var(--brand);background:var(--brand-soft);border-radius:8px;padding:4px 8px;margin-top:4px}
+  .cmp-table .muted{color:#9aa0a6}
+  .cmp2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+  .cmp-col{background:#fafbfc;border:1px solid #eef0f2;border-radius:10px;padding:14px}
+  .cmp-col h3{margin:0 0 10px;font-size:14px}
+  .cmp-col h3.a{color:var(--brand)}
+  .cmp-col h3.b{color:var(--danger)}
+  @media(max-width:720px){.cmp-hero{grid-template-columns:1fr}.cmp2{grid-template-columns:1fr}}
   @media print{
     .top,.input-card,.btn-row,.prototype-tag{display:none!important}
     body{background:#fff}
@@ -121,6 +150,12 @@
         </details>
       </div>
     </div>
+    <div class="cmp-toggle">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px;color:var(--sub)">
+        <input type="checkbox" id="compareMode"> 对比模式：同份简历，真 LLM vs 规则引擎 并排
+      </label>
+      <div class="hint">开启后同时跑两个引擎，直观看到「关键词命中打分」与「专业判断打分」的差距（替代早期写死的静态对比页，可对任意简历复现）。</div>
+    </div>
     <div class="btn-row">
       <button class="btn" id="genBtn">生成能力地图</button>
     </div>
@@ -155,6 +190,32 @@
       <div class="btn-row">
         <button class="btn ghost" onclick="window.print()">导出 PDF</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 对比结果区 -->
+  <div id="compareResult" style="display:none">
+    <div class="card">
+      <h2>② 双引擎对比 · 同份简历，真 LLM vs 规则引擎</h2>
+      <div class="cmp-hero" id="cmpHero"></div>
+      <div class="hint" id="cmpNote" style="display:none;margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>③ 逐维度对比 <span class="tag">同一份简历</span></h2>
+      <div id="cmpDims"></div>
+    </div>
+    <div class="card">
+      <h2>④ 风险点识别对比</h2>
+      <div id="cmpRisks"></div>
+    </div>
+    <div class="card">
+      <h2>⑤ 补强计划对比</h2>
+      <div id="cmpPlan"></div>
+    </div>
+    <div class="card">
+      <h2>结论</h2>
+      <div class="note" id="cmpConclusion"></div>
+      <div class="btn-row"><button class="btn ghost" onclick="window.print()">导出 PDF</button></div>
     </div>
   </div>
 </div>
@@ -296,6 +357,70 @@ function render(res){
   document.getElementById('result').scrollIntoView({behavior:'smooth'});
 }
 
+/* ============ 对比模式渲染 ============ */
+function dimCell(d){
+  if(!d) return '<div class="cm muted">—</div>';
+  return '<div class="sc"><div class="bar"><i style="width:'+d.score+'%;background:'+colorOf(d.score)+'"></i></div><b style="color:'+colorOf(d.score)+'">'+d.score+'</b></div>'+
+    '<div class="cm">'+escapeHtml(d.comment||'')+'</div>'+
+    (d.matched&&d.matched.length?'<div class="ev">证据：'+d.matched.map(x=>'<span class="evidence-chip">'+escapeHtml(x)+'</span>').join('')+'</div>':'');
+}
+function dimRow(ruleDim, llmDim){
+  return '<tr><td class="k">'+escapeHtml(ruleDim.key)+'</td><td class="ai">'+dimCell(llmDim)+'</td><td class="rg">'+dimCell(ruleDim)+'</td></tr>';
+}
+function riskCol(risks, name, emptyTxt){
+  if(!risks||!risks.length) return '<div class="cmp-col"><h3 class="'+name.cls+'">'+name.txt+' · 0 个</h3><div class="muted">'+emptyTxt+'</div></div>';
+  return '<div class="cmp-col"><h3 class="'+name.cls+'">'+name.txt+' · '+risks.length+' 个</h3>'+
+    risks.map(r=>'<div class="risk lv'+r.level+'"><div class="rt"><span class="pill lv'+r.level+'">'+r.level+'</span> '+escapeHtml(r.title)+'</div>'+
+      (r.evidence?'<div class="re">依据：'+escapeHtml(r.evidence)+'</div>':'')+
+      '<div class="rf">'+escapeHtml(r.fix)+'</div></div>').join('')+'</div>';
+}
+function planCol(plan, name){
+  if(!plan||!plan.length) return '<div class="cmp-col"><h3 class="'+name.cls+'">'+name.txt+'</h3><div class="muted">无</div></div>';
+  return '<div class="cmp-col"><h3 class="'+name.cls+'">'+name.txt+'</h3>'+
+    plan.map(p=>'<div class="pl"><span class="pill '+p.priority.toLowerCase()+'">'+p.priority+'</span><b>'+escapeHtml(p.dim)+'</b>：'+escapeHtml(p.action)+'<div class="ev">产出：'+escapeHtml(p.out)+'</div></div>').join('')+'</div>';
+}
+function renderCompare(data){
+  const rule=data.rule, llm=data.llm, hasLLM=!!llm;
+  const delta = hasLLM ? (rule.match - llm.match) : null;
+
+  document.getElementById('cmpHero').innerHTML =
+    '<div class="cmp-num ai"><div class="ct">真 LLM 评估</div><div class="cn">'+(hasLLM?llm.match:'—')+'</div><div class="cd">引用证据 · 专业判断</div></div>'+
+    '<div class="cmp-num rg"><div class="ct">规则引擎</div><div class="cn">'+rule.match+'</div><div class="cd">关键词命中即高分</div></div>'+
+    '<div class="cmp-num delta"><div class="ct">差距（规则−LLM）</div><div class="cn">'+(hasLLM?(delta>0?('+'+delta):delta):'—')+'</div><div class="cd">'+(hasLLM?(delta>=0?'规则引擎虚高':'LLM 更保守'):'仅规则结果')+'</div></div>';
+
+  const ruleDims=(rule.dims||[]).filter(d=>!/^\[/.test(d.key));
+  const llmDims=(llm&&llm.dims||[]).filter(d=>!/^\[/.test(d.key));
+  const llmByKey={}; llmDims.forEach(d=>llmByKey[d.key]=d);
+  const rows=ruleDims.map(d=>dimRow(d, llmByKey[d.key])).join('');
+  document.getElementById('cmpDims').innerHTML =
+    '<table class="cmp-table"><thead><tr><th>能力维度</th><th>真 LLM（引用证据）</th><th>规则引擎（关键词命中）</th></tr></thead><tbody>'+rows+'</tbody></table>';
+
+  document.getElementById('cmpRisks').innerHTML =
+    '<div class="cmp2">'+riskCol(hasLLM?llm.risks:null, {txt:'真 LLM', cls:'a'}, '未识别到明显风险点')+
+    riskCol(rule.risks, {txt:'规则引擎', cls:'b'}, '未识别到明显风险点')+'</div>';
+
+  document.getElementById('cmpPlan').innerHTML =
+    '<div class="cmp2">'+planCol(hasLLM?llm.plan:null, {txt:'真 LLM', cls:'a'})+
+    planCol(rule.plan, {txt:'规则引擎', cls:'b'})+'</div>';
+
+  let concl;
+  if(hasLLM){
+    const rk=(rule.risks||[]).length, lk=(llm.risks||[]).length;
+    concl='规则引擎把这份简历的整体匹配度打到 <b>'+rule.match+'</b> 分，仅仅因为它命中了关键词；而真 LLM 给出 <b>'+llm.match+'</b> 分，并指出 '+lk+' 个具体风险点（规则引擎仅识别到 '+rk+' 个）。'+
+      '差距本质：规则引擎在做「有没有提到」的关键词匹配，LLM 在做「做得怎么样、差在哪、怎么补」的判断。'+
+      (delta>0?' 本例中规则引擎虚高 '+delta+' 分，若只看它会产生虚假的安全感。':'');
+  } else {
+    concl='本次未配置 API Key，无法运行真 LLM，仅展示规则引擎结果。配置 Key 后开启对比模式即可看到双引擎差距。';
+  }
+  document.getElementById('cmpConclusion').innerHTML=concl;
+
+  const note=document.getElementById('cmpNote');
+  if(data.note){ note.textContent='（'+data.note+'）'; note.style.display='block'; } else { note.style.display='none'; }
+
+  document.getElementById('compareResult').style.display='block';
+  document.getElementById('compareResult').scrollIntoView({behavior:'smooth'});
+}
+
 /* ============ 交互 ============ */
 document.getElementById('genBtn').addEventListener('click', async ()=>{
   const btn=document.getElementById('genBtn');
@@ -304,15 +429,21 @@ document.getElementById('genBtn').addEventListener('click', async ()=>{
   if(!text){ err.textContent='请先粘贴简历文本或上传文件。'; err.style.display='block'; return; }
   const role=document.getElementById('roleSelect').value;
   const apiKey=document.getElementById('apiKeyInput').value.trim() || undefined; // 空则走后端内置模型
+  const compareMode=document.getElementById('compareMode').checked;
+  // 切换模式时隐藏另一结果区
+  document.getElementById('result').style.display='none';
+  document.getElementById('compareResult').style.display='none';
   btn.disabled=true; const oldTxt=btn.textContent; btn.textContent='生成中…';
   try{
-    const r=await fetch('/api/analyze',{
+    const endpoint = compareMode ? '/api/compare' : '/api/analyze';
+    const r=await fetch(endpoint,{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text, role, apiKey})
+      body:JSON.stringify({text, role, apiKey, compare:compareMode})
     });
     if(r.ok){
       const data=await r.json();
-      if(data && Array.isArray(data.dims) && data.dims.length){
+      if(compareMode && data && data.compare){ renderCompare(data); return; }
+      if(!compareMode && data && Array.isArray(data.dims) && data.dims.length){
         render(data);
         if(data.note){ err.style.color='var(--sub)'; err.textContent='（'+data.note+'）'; err.style.display='block'; }
         return;
@@ -320,12 +451,12 @@ document.getElementById('genBtn').addEventListener('click', async ()=>{
     }
     throw new Error('接口返回异常');
   }catch(e){
-    // 后端不可用（如直接双击打开 file://）→ 本地规则引擎兜底
+    // 后端不可用（如直接双击打开 file://）→ 本地规则引擎兜底；对比模式退化为单引擎说明
     try{
       const res=scoreResume(text, role);
       render(res);
       err.style.color='var(--sub)';
-      err.textContent='（后端不可用，已用本地规则引擎兜底）';
+      err.textContent='（后端不可用，已用本地规则引擎兜底；对比模式需后端支持）';
       err.style.display='block';
       return;
     }catch(e2){
