@@ -1,0 +1,8 @@
+# 部署构建上下文排除项（保护密钥与本地产物，绝不进镜像/上传包）
+.env
+.workbuddy
+_site_clone
+node_modules
+*.log
+.git
+.gitignore

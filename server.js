@@ -222,6 +222,19 @@ function serveStatic(req, res) {
   if (pathname === '/') pathname = '/resume-map-mvp.html';
   const filePath = path.normalize(path.join(ROOT, pathname));
   if (!filePath.startsWith(ROOT)) { res.writeHead(403); return res.end('Forbidden'); }
+
+  // HTML 文件：把占位符 {{ROLE_LIB_JSON}} 替换为后端 roleLib.json，保证前后端单一数据源（前端不再内联副本）
+  if (path.extname(filePath).toLowerCase() === '.html') {
+    fs.readFile(filePath, 'utf8', (err, data) => {
+      if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Not Found'); }
+      // 转义 < 防止 </script> 截断（防御性，roleLib 实际不含该字符）
+      const injected = data.replace(/\{\{ROLE_LIB_JSON\}\}/g, JSON.stringify(ROLE_LIB).replace(/</g, '\\u003c'));
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(injected);
+    });
+    return;
+  }
+
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Not Found'); }
     const ext = path.extname(filePath).toLowerCase();

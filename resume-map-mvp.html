@@ -163,62 +163,20 @@
 
 <script>
 /* ============ 岗位能力维度库 ============ */
-const ROLE_LIB = {
-  ai_pm: {
-    name:'AI 产品经理',
-    dims:[
-      {key:'数据分析能力', weight:20, kws:['数据','分析','python','pandas','mysql','sql','建模','auc','指标','可视化','复购','预测','报表','统计']},
-      {key:'AI工具与落地', weight:20, kws:['ai','大模型','llm','prompt','rag','千问','通义','claude','workbuddy','智能体','agent','微调','部署','gpt','问答']},
-      {key:'产品基本功', weight:20, kws:['产品','prd','需求','原型','墨刀','交互','用户故事','竞品','axure','设计','功能','调研']},
-      {key:'技术概念理解', weight:15, kws:['api','接口','后端','前端','vue','部署','云服务','数据库','架构','小程序','开发','vite']},
-      {key:'业务理解', weight:15, kws:['业务','用户','商业化','增长','运营','行业','场景','b端','c端','流程','痛点']},
-      {key:'表达与诚实度', weight:10, kws:[], special:true}
-    ],
-    planMap:{
-      '数据分析能力':{action:'补一个量化数据分析小项目（如用 Pandas 做用户/销售分析）', out:'可写进简历的分析报告'},
-      'AI工具与落地':{action:'把"用过 AI 工具"变成"用 AI 做出过什么"——沉淀 1 个 AI 落地/评测案例', out:'AI 案例文档（可直接写进简历）'},
-      '产品基本功':{action:'完整练写一份 PRD（需求背景→用户故事→功能列表→优先级）', out:'可讲可展示的 PRD'},
-      '技术概念理解':{action:'搞懂 API / 部署 / 成本概念，能和技术同事对话', out:'技术概念笔记'},
-      '业务理解':{action:'研究目标行业的产业链与商业模式', out:'行业分析笔记'}
-    }
-  },
-  data: {
-    name:'数据分析',
-    dims:[
-      {key:'数据处理', weight:30, kws:['python','pandas','numpy','清洗','数据处理','excel','etl']},
-      {key:'统计建模', weight:25, kws:['建模','机器学习','回归','分类','auc','预测','聚类','算法','模型']},
-      {key:'SQL与数据库', weight:20, kws:['sql','mysql','数据库','查询','hive','数仓','clickhouse']},
-      {key:'可视化', weight:15, kws:['可视化','tableau','echarts','图表','报表','powerbi','bi']},
-      {key:'业务理解', weight:10, kws:['业务','指标','分析','运营','增长']},
-      {key:'表达与诚实度', weight:0, kws:[], special:true}
-    ],
-    planMap:{
-      '数据处理':{action:'做一个完整数据清洗项目（缺失值/异常值处理）', out:'清洗流程文档'},
-      '统计建模':{action:'跑通一个端到端建模项目（如复购预测）', out:'建模报告（含 AUC 等指标）'},
-      'SQL与数据库':{action:'练习复杂 SQL（窗口函数/多表关联）', out:'SQL 练习集'},
-      '可视化':{action:'用 ECharts/Tableau 做一份业务 Dashboard', out:'可视化看板'},
-      '业务理解':{action:'结合业务解读数据，而不只是出数', out:'业务分析笔记'}
-    }
-  },
-  fe: {
-    name:'前端开发',
-    dims:[
-      {key:'框架能力', weight:30, kws:['vue','react','javascript','typescript','小程序','组件','angular']},
-      {key:'工程化', weight:20, kws:['webpack','vite','构建','npm','打包','babel','eslint']},
-      {key:'基础', weight:25, kws:['html','css','布局','响应式','动画','flex','grid']},
-      {key:'协作', weight:15, kws:['原型','设计','接口','联调','axure','figma']},
-      {key:'性能优化', weight:10, kws:['性能','优化','测试','seo','懒加载']},
-      {key:'表达与诚实度', weight:0, kws:[], special:true}
-    ],
-    planMap:{
-      '框架能力':{action:'用 Vue3/React 做一个完整项目并部署上线', out:'可访问的项目 Demo'},
-      '工程化':{action:'自己配置一次 Vite/Webpack 构建链', out:'构建配置笔记'},
-      '基础':{action:'练 CSS 布局与响应式（Flex/Grid）', out:'布局练习页'},
-      '协作':{action:'学画原型/读设计稿，提升与设计协作', out:'原型练习'},
-      '性能优化':{action:'给项目做一次性能优化并量化结果', out:'优化报告'}
-    }
+/* 岗位能力维度库由服务端在响应时注入（占位符 ROLE_LIB_JSON，运行时由 server.js 替换为后端 roleLib.json），保证前后端单一数据源，消除重复维护。
+   离线双击打开时占位符不被替换，下方兜底会尝试 fetch 同源 roleLib.json（file:// 下通常被浏览器 CORS 拦截，属预期降级）。 */
+window.__ROLE_LIB__ = {{ROLE_LIB_JSON}};
+let ROLE_LIB = window.__ROLE_LIB__;
+
+// 离线兜底：若服务端未注入（file:// / 其他静态托管），尝试 fetch 同源 roleLib.json
+(async () => {
+  if (typeof window.__ROLE_LIB__ === 'string' && window.__ROLE_LIB__.startsWith('{{')) {
+    try {
+      const r = await fetch('roleLib.json');
+      if (r.ok) { window.__ROLE_LIB__ = await r.json(); ROLE_LIB = window.__ROLE_LIB__; }
+    } catch (e) { console.warn('无法加载岗位库，离线降级不可用'); }
   }
-};
+})();
 
 /* ============ 评分引擎（规则） ============ */
 function scoreResume(text, roleKey){
