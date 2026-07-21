@@ -137,8 +137,14 @@
           <option value="ai_pm">AI 产品经理</option>
           <option value="data">数据分析</option>
           <option value="fe">前端开发</option>
+          <option value="__custom__">＋ 贴 JD 自定义</option>
         </select>
         <div class="hint">不同岗位加载不同能力维度库与评分权重。</div>
+        <div id="jdBox" style="display:none;margin-top:10px">
+          <label>粘贴目标岗位 JD（自定义评估维度）</label>
+          <textarea id="jdInput" rows="5" placeholder="粘贴招聘 JD 全文，系统将自动解析为能力维度库（4-6 个维度 + 权重 + 关键词）"></textarea>
+          <div class="hint">解析结果会按 JD 缓存，重复 JD 不重复消耗。无 API Key 时自动走本地启发式解析。</div>
+        </div>
         <label style="margin-top:14px">AI 模型</label>
         <div style="margin-top:6px"><span class="pill" style="background:#e6f6ee;color:#1f9d6b">内置模型</span> <span style="color:var(--sub);font-size:12px">打开即用</span></div>
         <div class="hint">默认使用服务端内置模型。如服务端未配置内置 Key，会自动降级规则引擎并提示。高级用户可展开下方选项使用自己的 Key。</div>
@@ -422,12 +428,32 @@ function renderCompare(data){
 }
 
 /* ============ 交互 ============ */
+document.getElementById('roleSelect').addEventListener('change', (e)=>{
+  document.getElementById('jdBox').style.display = (e.target.value==='__custom__') ? 'block' : 'none';
+});
+const jdLibCache = new Map();
+async function parseJD(jd){
+  const key = 'jd_'+jd.length+'_'+jd.slice(0,50);
+  if(jdLibCache.has(key)) return jdLibCache.get(key);
+  const r = await fetch('/api/jd-parse', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({jd})});
+  const data = await r.json();
+  if(data && data.lib){ jdLibCache.set(key, data.lib); return data.lib; }
+  throw new Error((data && data.error) || 'JD 解析失败');
+}
 document.getElementById('genBtn').addEventListener('click', async ()=>{
   const btn=document.getElementById('genBtn');
   const err=document.getElementById('genErr'); err.style.display='none';
   const text=document.getElementById('resumeText').value.trim();
   if(!text){ err.textContent='请先粘贴简历文本或上传文件。'; err.style.display='block'; return; }
-  const role=document.getElementById('roleSelect').value;
+  const roleSelect=document.getElementById('roleSelect');
+  const role=roleSelect.value;
+  let customLib=null;
+  if(role==='__custom__'){
+    const jd=document.getElementById('jdInput').value.trim();
+    if(!jd){ err.textContent='请先在「贴 JD 自定义」中粘贴目标岗位 JD。'; err.style.display='block'; return; }
+    try{ customLib=await parseJD(jd); }
+    catch(e){ err.style.color=''; err.textContent='JD 解析失败：'+(e.message||e); err.style.display='block'; return; }
+  }
   const apiKey=document.getElementById('apiKeyInput').value.trim() || undefined; // 空则走后端内置模型
   const compareMode=document.getElementById('compareMode').checked;
   // 切换模式时隐藏另一结果区
@@ -436,9 +462,12 @@ document.getElementById('genBtn').addEventListener('click', async ()=>{
   btn.disabled=true; const oldTxt=btn.textContent; btn.textContent='生成中…';
   try{
     const endpoint = compareMode ? '/api/compare' : '/api/analyze';
+    const body = compareMode
+      ? {text, role, customLib, apiKey, compare:true}
+      : {text, role, customLib, apiKey};
     const r=await fetch(endpoint,{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text, role, apiKey, compare:compareMode})
+      body:JSON.stringify(body)
     });
     if(r.ok){
       const data=await r.json();
@@ -451,7 +480,11 @@ document.getElementById('genBtn').addEventListener('click', async ()=>{
     }
     throw new Error('接口返回异常');
   }catch(e){
-    // 后端不可用（如直接双击打开 file://）→ 本地规则引擎兜底；对比模式退化为单引擎说明
+    // 后端不可用（如直接双击打开 file://）→ 预设岗位走本地规则引擎兜底
+    if(role==='__custom__'){
+      err.style.color=''; err.textContent='自定义 JD 模式需要后端服务（直接双击打开不可用）。请通过本地 node 服务或线上版本访问。';
+      err.style.display='block'; return;
+    }
     try{
       const res=scoreResume(text, role);
       render(res);
