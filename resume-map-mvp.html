@@ -121,16 +121,13 @@
     <h2>① 输入简历</h2>
     <div class="row">
       <div>
-        <label>粘贴简历文本</label>
-        <textarea id="resumeText" placeholder="在此粘贴简历全文，或上传 PDF 文件…"></textarea>
+        <label>粘贴简历文本（选择目标岗位）</label>
+        <textarea id="resumeText" placeholder="在此粘贴简历全文，或上传 PDF / TXT 文件…"></textarea>
         <div class="btn-row">
           <button class="btn ghost" id="sampleBtn">填入示例简历</button>
+          <button class="btn ghost" id="uploadBtn">上传文件</button>
         </div>
-      </div>
-      <div>
-        <label>上传文件（PDF / TXT）</label>
-        <input type="file" id="fileInput" accept=".pdf,.txt">
-        <div class="hint">PDF 通过浏览器内 pdf.js 解析；TXT 直接读取。DOCX 原型暂不支持，请粘贴文本。</div>
+        <input type="file" id="fileInput" accept=".pdf,.txt" style="display:none">
         <div class="err" id="fileErr"></div>
         <label style="margin-top:14px">选择目标岗位</label>
         <select id="roleSelect">
@@ -140,12 +137,14 @@
           <option value="__custom__">＋ 贴 JD 自定义</option>
         </select>
         <div class="hint">不同岗位加载不同能力维度库与评分权重。</div>
-        <div id="jdBox" style="display:none;margin-top:10px">
-          <label>粘贴目标岗位 JD（自定义评估维度）</label>
-          <textarea id="jdInput" rows="5" placeholder="粘贴招聘 JD 全文，系统将自动解析为能力维度库（4-6 个维度 + 权重 + 关键词）"></textarea>
-          <div class="hint">解析结果会按 JD 缓存，重复 JD 不重复消耗。无 API Key 时自动走本地启发式解析。</div>
-        </div>
-        <label style="margin-top:14px">AI 模型</label>
+      </div>
+      <div>
+        <label>粘贴 JD 文本（自定义评估维度，可选）</label>
+        <textarea id="jdInput" rows="9" placeholder="粘贴招聘 JD 全文，系统将自动解析为能力维度库（4-6 个维度 + 权重 + 关键词）。选「＋ 贴 JD 自定义」岗位时生效。"></textarea>
+        <div class="hint">解析结果按 JD 缓存，重复 JD 不重复消耗；无 API Key 时自动走本地启发式解析。</div>
+      </div>
+      <div>
+        <label>AI 模型</label>
         <div style="margin-top:6px"><span class="pill" style="background:#e6f6ee;color:#1f9d6b">内置模型</span> <span style="color:var(--sub);font-size:12px">打开即用</span></div>
         <div class="hint">默认使用服务端内置模型。如服务端未配置内置 Key，会自动降级规则引擎并提示。高级用户可展开下方选项使用自己的 Key。</div>
         <details style="margin-top:10px">
@@ -428,8 +427,8 @@ function renderCompare(data){
 }
 
 /* ============ 交互 ============ */
-document.getElementById('roleSelect').addEventListener('change', (e)=>{
-  document.getElementById('jdBox').style.display = (e.target.value==='__custom__') ? 'block' : 'none';
+document.getElementById('uploadBtn').addEventListener('click', ()=>{
+  document.getElementById('fileInput').click();
 });
 const jdLibCache = new Map();
 async function parseJD(jd){
@@ -450,7 +449,7 @@ document.getElementById('genBtn').addEventListener('click', async ()=>{
   let customLib=null;
   if(role==='__custom__'){
     const jd=document.getElementById('jdInput').value.trim();
-    if(!jd){ err.textContent='请先在「贴 JD 自定义」中粘贴目标岗位 JD。'; err.style.display='block'; return; }
+    if(!jd){ err.textContent='请先在右侧「粘贴 JD 文本」中粘贴目标岗位 JD。'; err.style.display='block'; return; }
     try{ customLib=await parseJD(jd); }
     catch(e){ err.style.color=''; err.textContent='JD 解析失败：'+(e.message||e); err.style.display='block'; return; }
   }
