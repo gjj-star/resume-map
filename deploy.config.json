@@ -1,0 +1,13 @@
+{
+  "serverName": "resumap",
+  "serverType": "container",
+  "force": true,
+  "serverConfig": {
+    "OpenAccessTypes": ["PUBLIC"],
+    "Port": 3000,
+    "MinNum": 0,
+    "MaxNum": 1,
+    "EnvParams": "{\"RM_API_KEY\":\"${RM_API_KEY}\"}"
+  },
+  "note": "MinNum=0 表示空闲缩容到 0 实例，仅在有人访问时拉起（冷启动约 1-2s），可省 90%+ 资源点，避免此前 MinNum=1 常驻空转烧光免费额度。RM_API_KEY 实际部署时由 MCP 的 EnvParams 直接注入，不写死在此文件、不进仓库。部署前需用户先在腾讯云控制台解隔离/充值资源点。"
+}
